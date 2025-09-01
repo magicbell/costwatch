@@ -30,6 +30,7 @@ func main() {
 func run(ctx context.Context, log *slog.Logger) error {
 	log.Info("Starting CostWatch...")
 	fmt.Println("CostWatch started")
+
 	// ===========================================================================
 	// Clickhouse Connection
 	cfg := clickstore.Config{

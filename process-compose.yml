@@ -23,8 +23,29 @@ processes:
       exec:
         command: docker compose exec clickhouse clickhouse-client --query "SELECT 1"
 
-  go-api:
-    namespace: api
+  worker:
+    namespace: apps
+    working_dir: .
+    command: go tool task run-worker
+    ready_log_line: 'dev server ready'
+    is_tty: true
+    availability:
+      restart: always
+    depends_on:
+      clickhouse:
+        condition: process_log_ready
+      seed:
+        condition: process_completed_successfully
+
+    liveness_probe:
+      period_seconds: 60
+      http_get:
+        host: localhost
+        port: 3000
+        path: /healthcheck
+
+  api:
+    namespace: apps
     working_dir: .
     command: go tool task run-api
     ready_log_line: 'dev server ready'
@@ -42,4 +63,4 @@ processes:
       http_get:
         host: localhost
         port: 3000
-        path: /healthcheck
+        path: /v1/healthcheck

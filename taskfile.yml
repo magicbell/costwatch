@@ -2,6 +2,7 @@ version: '3'
 
 vars:
   NODE_OPTIONS: '--no-warnings'
+  APP_ENV: 'development'
 
 dotenv: ['.env']
 
@@ -14,9 +15,12 @@ tasks:
   run-api:
     desc: Run the go-api
     cmds:
-      - go tool gow run ./cmd/main.go -e go,env
-    env:
-      APP_ENV: development
+      - go tool gow run ./apps/api/cmd/main.go -e go,env
+
+  run-worker:
+    desc: Run the go-worker
+    cmds:
+      - go tool gow run ./apps/worker/cmd/main.go -e go,env
 
   seed-clickhouse:
     desc: Seed ClickHouse
