@@ -18,7 +18,7 @@ type Config struct {
 	Database string `conf:"help:ClickHouse database"`
 	SSL      bool   `conf:"help:Use secure connection to ClickHouse"`
 	Conn     struct {
-		Name    string `conf:"default:magicbell,help:ClickHouse connection name"`
+		Name    string `conf:"default:costwatch,help:ClickHouse connection name"`
 		Version string `conf:"default:1.0.0,help:ClickHouse connection version"`
 	}
 }

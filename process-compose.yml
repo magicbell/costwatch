@@ -1,0 +1,45 @@
+version: '0.5'
+is_strict: true
+
+processes:
+  seed:
+    namespace: toolbox
+    working_dir: .
+    command: go tool task seed-clickhouse
+    depends_on:
+      clickhouse:
+        condition: process_log_ready
+
+  clickhouse:
+    namespace: docker
+    working_dir: .
+    command: docker compose up clickhouse --build
+    ready_log_line: 'Logging errors to'
+    shutdown:
+      command: 'docker compose stop clickhouse'
+    availability:
+      restart: on_failure
+    liveness_probe:
+      exec:
+        command: docker compose exec clickhouse clickhouse-client --query "SELECT 1"
+
+  go-api:
+    namespace: api
+    working_dir: .
+    command: go tool task run-api
+    ready_log_line: 'dev server ready'
+    is_tty: true
+    availability:
+      restart: always
+    depends_on:
+      clickhouse:
+        condition: process_log_ready
+      seed:
+        condition: process_completed_successfully
+
+    liveness_probe:
+      period_seconds: 60
+      http_get:
+        host: localhost
+        port: 3000
+        path: /healthcheck

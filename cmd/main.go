@@ -22,14 +22,14 @@ func main() {
 	log := slog.New(lh)
 
 	if err := run(context.Background(), log); err != nil {
-		log.Error("Failed to run Costwatch", "error", err.Error())
+		log.Error("Failed to run CostWatch", "error", err.Error())
 		os.Exit(1)
 	}
 }
 
 func run(ctx context.Context, log *slog.Logger) error {
-	log.Info("Starting Costwatch...")
-	fmt.Println("Costwatch started")
+	log.Info("Starting CostWatch...")
+	fmt.Println("CostWatch started")
 	// ===========================================================================
 	// Clickhouse Connection
 	cfg := clickstore.Config{
@@ -37,6 +37,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		Port:     9000,
 		Username: "default",
 		Password: "password",
+		Database: "costwatch",
 	}
 
 	c, err := clickstore.NewClient(ctx, log, cfg)
@@ -46,8 +47,9 @@ func run(ctx context.Context, log *slog.Logger) error {
 	defer c.Close()
 
 	// ===========================================================================
-	// Costwatch
-	wtc, err := costwatch.New(ctx, log, c)
+	// CostWatch
+	tenantID := "default"
+	wtc, err := costwatch.New(ctx, log, c, tenantID)
 	if err != nil {
 		return fmt.Errorf("costwatch.New: %w", err)
 	}

@@ -6,33 +6,40 @@ import (
 )
 
 func (c *Client) Setup(ctx context.Context, dbName string) error {
-	// Implementation for creating a new schema in Clickhouse
+	if dbName == "" {
+		return fmt.Errorf("setup: empty database name")
+	}
 
-	if err := c.Exec(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbName)); err != nil {
+	quotedDB := fmt.Sprintf("`%s`", dbName)
+	tableFQN := fmt.Sprintf("%s.`metrics`", quotedDB)
+
+	if err := c.Exec(ctx, fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", quotedDB)); err != nil {
 		return fmt.Errorf("setup.CreateDB: %w", err)
 	}
 
 	if err := c.Exec(ctx, fmt.Sprintf(
-		`CREATE TABLE IF NOT EXISTS %s (
-		service String,
-		label String,  
-		value Float64,  
-		timestamp DateTime64(3, 'UTC'),  
-		) 
-		ENGINE = MergeTree()
-				TTL toDateTime(timestamp) + toIntervalDay(90)
-				ORDER BY (
-					service,
-					label,
-					toStartOfDay(timestamp), 
-					timestamp
-				)
-				PRIMARY KEY (
-					service,
-					label,
-					toStartOfDay(timestamp), 
-				)`,
-		dbName+".metrics"),
+		`create table if not exists %s (
+			tenant_id String,
+			service String,
+			metric String,
+			value Float64,
+			timestamp DateTime64(3, 'UTC')
+		)
+		ENGINE = ReplacingMergeTree()
+		TTL toDateTime(timestamp) + toIntervalDay(90)
+		order by (
+			tenant_id,
+			service,
+			metric,
+			timestamp
+		)
+		primary key (
+			tenant_id,
+			service,
+			metric,
+			timestamp
+		)`,
+		tableFQN),
 	); err != nil {
 		return fmt.Errorf("setup.CreateTable: %w", err)
 	}

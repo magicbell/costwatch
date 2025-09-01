@@ -1,0 +1,29 @@
+version: '3'
+
+vars:
+  NODE_OPTIONS: '--no-warnings'
+
+dotenv: ['.env']
+
+tasks:
+  up:
+    desc: Run the dev environment
+    cmds:
+      - process-compose up
+
+  run-api:
+    desc: Run the go-api
+    cmds:
+      - go tool gow run ./cmd/main.go -e go,env
+    env:
+      APP_ENV: development
+
+  seed-clickhouse:
+    desc: Seed ClickHouse
+    cmds:
+      - go run ./cmd/admin/admin.go seed-clickhouse
+  lint:
+    desc: Run Go linter
+    cmds:
+      - go fmt ./...
+      - golangci-lint run ./...

@@ -38,14 +38,18 @@ func (s *mtrWithUsage) Cost() float64 {
 }
 
 type CostWatch struct {
-	log  *slog.Logger
-	svcs map[string]*svcWithMetric
+	log      *slog.Logger
+	cs       *clickstore.Client
+	tenantID string
+	svcs     map[string]*svcWithMetric
 }
 
-func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client) (*CostWatch, error) {
+func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client, tenantID string) (*CostWatch, error) {
 	return &CostWatch{
-		log:  log,
-		svcs: make(map[string]*svcWithMetric),
+		log:      log,
+		cs:       cs,
+		tenantID: tenantID,
+		svcs:     make(map[string]*svcWithMetric),
 	}, nil
 }
 
@@ -81,6 +85,16 @@ func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time
 
 			mwu := s.mtrs[m.Label()]
 			for _, dp := range dps {
+				err = cw.cs.AsyncInsert(
+					ctx,
+					"insert into metrics (tenant_id, service, metric, value, timestamp) values (?, ?, ?, ?, ?)",
+					false,
+					cw.tenantID, s.svc.Label(), m.Label(), dp.Value, dp.Timestamp,
+				)
+				if err != nil {
+					return fmt.Errorf("clickhouse.insert metrics: %w", err)
+				}
+
 				mwu.units += dp.Value
 				mwu.cost += (dp.Value / m.UnitsPerPrice()) * m.Price()
 			}
