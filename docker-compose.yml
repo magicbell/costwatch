@@ -1,0 +1,15 @@
+name: costwatch
+
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    environment:
+      - CLICKHOUSE_PASSWORD=password
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://clickhouse:8123/ping || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
