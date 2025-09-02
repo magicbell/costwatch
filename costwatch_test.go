@@ -92,11 +92,11 @@ func TestCostwatch(t *testing.T) {
 	err = wtc.FetchMetrics(ctx, startTS, endTS)
 	assert.NilError(t, err)
 
-	usg, err := wtc.ServiceUsage(ctx, "aws.CloudWatch", startTS, endTS)
+	usg, err := wtc.ServiceUsage(ctx, svc, startTS, endTS)
 	assert.NilError(t, err)
 	assert.Equal(t, len(usg), 1)
 
 	assert.Assert(t, usg["IncomingBytes"] != nil)
 	assert.Equal(t, usg["IncomingBytes"].Units(), 9.170550853037e+12)
-	assert.Equal(t, usg["IncomingBytes"].Cost(), 458527.54265184986)
+	assert.Equal(t, usg["IncomingBytes"].Cost(), 458527.54265185003)
 }

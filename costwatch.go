@@ -16,24 +16,18 @@ type Usage interface {
 	Cost() float64
 }
 
-type svcWithMetric struct {
-	svc  Service
-	mtrs map[string]*mtrWithUsage
-}
+var _ Usage = (*ServiceUsage)(nil)
 
-var _ Usage = (*mtrWithUsage)(nil)
-
-type mtrWithUsage struct {
-	svc   Service
+type ServiceUsage struct {
 	units float64
 	cost  float64
 }
 
-func (s *mtrWithUsage) Units() float64 {
+func (s *ServiceUsage) Units() float64 {
 	return s.units
 }
 
-func (s *mtrWithUsage) Cost() float64 {
+func (s *ServiceUsage) Cost() float64 {
 	return s.cost
 }
 
@@ -41,7 +35,7 @@ type CostWatch struct {
 	log      *slog.Logger
 	cs       *clickstore.Client
 	tenantID string
-	svcs     map[string]*svcWithMetric
+	svcs     map[string]Service
 }
 
 func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client, tenantID string) (*CostWatch, error) {
@@ -49,7 +43,7 @@ func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client, tenantID 
 		log:      log,
 		cs:       cs,
 		tenantID: tenantID,
-		svcs:     make(map[string]*svcWithMetric),
+		svcs:     make(map[string]Service),
 	}, nil
 }
 
@@ -58,58 +52,110 @@ func (cw *CostWatch) RegisterService(svc Service) error {
 		return ErrServiceAlreadyRegistered
 	}
 
-	cw.svcs[svc.Label()] = &svcWithMetric{
-		svc:  svc,
-		mtrs: make(map[string]*mtrWithUsage),
-	}
+	cw.svcs[svc.Label()] = svc
 
 	return nil
 }
 
 func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time.Time) error {
-	// Start all services
-	for _, s := range cw.svcs {
-		for _, m := range s.svc.Metrics() {
-			if _, exists := s.mtrs[m.Label()]; !exists {
-				s.mtrs[m.Label()] = &mtrWithUsage{
-					svc:   s.svc,
-					units: 0,
-					cost:  0,
-				}
-			}
+	// Prepare batch for bulk insertion
+	batch, err := cw.cs.PrepareBatch(ctx, "INSERT INTO metrics (tenant_id, service, metric, value, timestamp)")
+	if err != nil {
+		return fmt.Errorf("prepare batch: %w", err)
+	}
 
+	// Collect all datapoints and add to batch
+	for _, s := range cw.svcs {
+		for _, m := range s.Metrics() {
 			dps, err := m.Datapoints(ctx, m.Label(), start, end)
 			if err != nil {
 				return fmt.Errorf("m.Datapoints: %w", err)
 			}
 
-			mwu := s.mtrs[m.Label()]
+			// Add all datapoints to the batch
 			for _, dp := range dps {
-				err = cw.cs.AsyncInsert(
-					ctx,
-					"insert into metrics (tenant_id, service, metric, value, timestamp) values (?, ?, ?, ?, ?)",
-					false,
-					cw.tenantID, s.svc.Label(), m.Label(), dp.Value, dp.Timestamp,
-				)
-				if err != nil {
-					return fmt.Errorf("clickhouse.insert metrics: %w", err)
+				if err := batch.Append(
+					cw.tenantID,
+					s.Label(),
+					m.Label(),
+					dp.Value,
+					dp.Timestamp,
+				); err != nil {
+					return fmt.Errorf("batch append: %w", err)
 				}
-
-				mwu.units += dp.Value
-				mwu.cost += (dp.Value / m.UnitsPerPrice()) * m.Price()
 			}
 		}
+	}
+
+	// Send the batch to ClickHouse
+	if err := batch.Send(); err != nil {
+		return fmt.Errorf("batch send: %w", err)
 	}
 
 	return nil
 }
 
-func (cw *CostWatch) ServiceUsage(ctx context.Context, label string, start time.Time, end time.Time) (map[string]Usage, error) {
-	svc := cw.svcs[label]
+func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.Time, end time.Time) (map[string]Usage, error) {
+	svc, exists := cw.svcs[svc.Label()]
+	if !exists {
+		return nil, fmt.Errorf("service %s not registered", svc.Label())
+	}
+
+	// Query ClickHouse for aggregated metrics data
+	query := `
+		SELECT 
+			metric,
+			sum(value) as total_units
+		FROM metrics 
+		WHERE tenant_id = ? 
+			AND service = ? 
+			AND timestamp >= ? 
+			AND timestamp <= ?
+		GROUP BY metric
+	`
+
+	rows, err := cw.cs.Query(ctx, query, cw.tenantID, svc.Label(), start, end)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query metrics from ClickHouse: %w", err)
+	}
+	defer rows.Close()
 
 	usg := make(map[string]Usage)
-	for l, m := range svc.mtrs {
-		usg[l] = m
+
+	// Process each metric result
+	for rows.Next() {
+		var metricName string
+		var totalUnits float64
+
+		err := rows.Scan(&metricName, &totalUnits)
+		if err != nil {
+			return nil, fmt.Errorf("rows.Scan: %w", err)
+		}
+
+		// Find the metric definition to get pricing information
+		var match Metric
+		for _, m := range svc.Metrics() {
+			if m.Label() == metricName {
+				match = m
+				break
+			}
+		}
+
+		if match == nil {
+			return nil, fmt.Errorf("no matching metric found for %s", metricName)
+		}
+
+		// Calculate cost using the metric's pricing info
+		totalCost := (totalUnits / match.UnitsPerPrice()) * match.Price()
+
+		usg[metricName] = &ServiceUsage{
+			units: totalUnits,
+			cost:  totalCost,
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
 	}
 
 	return usg, nil
