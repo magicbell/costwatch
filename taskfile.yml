@@ -12,6 +12,15 @@ tasks:
     cmds:
       - process-compose up
 
+  install:
+    desc: Install dependencies
+    cmds:
+      - yarn --cwd ./apps/dashboard install --prefer-offline --no-progress --non-interactive --silent
+    sources:
+      - package*.json
+    generates:
+      - node_modules
+
   run-api:
     desc: Run the go-api
     cmds:
@@ -22,10 +31,17 @@ tasks:
     cmds:
       - go tool gow run ./apps/worker/cmd/main.go -e go,env
 
+  run-dashboard:
+    desc: Run the go-dashboard
+    deps: [install]
+    cmds:
+      - yarn --cwd ./apps/dashboard dev
+
   seed-clickhouse:
     desc: Seed ClickHouse
     cmds:
       - go run ./cmd/admin/admin.go seed-clickhouse
+
   lint:
     desc: Run Go linter
     cmds:

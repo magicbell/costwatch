@@ -48,7 +48,7 @@ processes:
     namespace: apps
     working_dir: .
     command: go tool task run-api
-    ready_log_line: 'dev server ready'
+    ready_log_line: 'listening on'
     is_tty: true
     availability:
       restart: always
@@ -64,3 +64,14 @@ processes:
         host: localhost
         port: 3000
         path: /v1/healthcheck
+
+  dashboard:
+    namespace: apps
+    working_dir: .
+    command: go tool task run-dashboard
+    ready_log_line: 'ready in'
+    availability:
+      restart: always
+    depends_on:
+      api:
+        condition: process_log_ready
