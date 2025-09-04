@@ -56,8 +56,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 
 	// ===========================================================================
 	// CostWatch
-	tenantID := "default"
-	wtc, err := costwatch.New(ctx, log, c, tenantID)
+	wtc, err := costwatch.New(ctx, log, c)
 	if err != nil {
 		return fmt.Errorf("costwatch.New: %w", err)
 	}

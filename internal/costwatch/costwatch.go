@@ -36,7 +36,6 @@ func (s *ServiceUsage) Cost() float64 {
 type CostWatch struct {
 	log       *slog.Logger
 	cs        *clickstore.Client
-	tenantID  string
 	svcs      map[string]Service
 	syncStore *cwsync.Store
 }
@@ -50,12 +49,11 @@ func (cw *CostWatch) Services() []Service {
 	return res
 }
 
-func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client, tenantID string) (*CostWatch, error) {
+func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client) (*CostWatch, error) {
 	return &CostWatch{
-		log:      log,
-		cs:       cs,
-		tenantID: tenantID,
-		svcs:     make(map[string]Service),
+		log:  log,
+		cs:   cs,
+		svcs: make(map[string]Service),
 	}, nil
 }
 
@@ -90,7 +88,7 @@ func (cw *CostWatch) Sync(ctx context.Context) error {
 	fifteenAgo := now.Add(-15 * time.Minute)
 	for _, s := range cw.Services() {
 		for _, m := range s.Metrics() {
-			last, ok, err := st.Get(ctx, cw.tenantID, s.Label(), m.Label())
+   last, ok, err := st.Get(ctx, s.Label(), m.Label())
 			if err != nil {
 				cw.log.Error("syncstate.Get error", "service", s.Label(), "metric", m.Label(), "error", err)
 				continue
@@ -110,7 +108,7 @@ func (cw *CostWatch) Sync(ctx context.Context) error {
 				cw.log.Error("FetchMetricForService failed", "service", s.Label(), "metric", m.Label(), "error", err)
 				continue
 			}
-			if err := st.Set(ctx, cw.tenantID, s.Label(), m.Label(), end); err != nil {
+   if err := st.Set(ctx, s.Label(), m.Label(), end); err != nil {
 				cw.log.Error("syncstate.Set error", "service", s.Label(), "metric", m.Label(), "error", err)
 			}
 		}
@@ -130,7 +128,7 @@ func (cw *CostWatch) RegisterService(svc Service) error {
 
 func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time.Time) error {
 	// Prepare batch for bulk insertion
-	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (tenant_id, service, metric, value, timestamp)")
+	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (service, metric, value, timestamp)")
 	if err != nil {
 		return fmt.Errorf("prepare batch: %w", err)
 	}
@@ -145,8 +143,7 @@ func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time
 
 			// Add all datapoints to the batch
 			for _, dp := range dps {
-				if err := batch.Append(
-					cw.tenantID,
+    if err := batch.Append(
 					s.Label(),
 					m.Label(),
 					dp.Value,
@@ -173,7 +170,7 @@ func (cw *CostWatch) FetchMetricsForService(ctx context.Context, svc Service, st
 	}
 
 	// Prepare a batch for bulk insertion
-	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (tenant_id, service, metric, value, timestamp)")
+	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (service, metric, value, timestamp)")
 	if err != nil {
 		return fmt.Errorf("prepare batch: %w", err)
 	}
@@ -184,7 +181,6 @@ func (cw *CostWatch) FetchMetricsForService(ctx context.Context, svc Service, st
 		}
 		for _, dp := range dps {
 			if err := batch.Append(
-				cw.tenantID,
 				svc.Label(),
 				m.Label(),
 				dp.Value,
@@ -205,7 +201,7 @@ func (cw *CostWatch) FetchMetricForService(ctx context.Context, svc Service, m M
 	if svc == nil || m == nil {
 		return fmt.Errorf("nil service or metric")
 	}
-	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (tenant_id, service, metric, value, timestamp)")
+ batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (service, metric, value, timestamp)")
 	if err != nil {
 		return fmt.Errorf("prepare batch: %w", err)
 	}
@@ -215,7 +211,6 @@ func (cw *CostWatch) FetchMetricForService(ctx context.Context, svc Service, m M
 	}
 	for _, dp := range dps {
 		if err := batch.Append(
-			cw.tenantID,
 			svc.Label(),
 			m.Label(),
 			dp.Value,
@@ -237,19 +232,18 @@ func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.T
 	}
 
 	// Query ClickHouse for aggregated metrics data
-	query := `
+ query := `
 		select 
 			metric,
 			sum(value) as total_units
 		from metrics 
-		where tenant_id = ? 
-			and service = ? 
+		where service = ? 
 			and timestamp >= ? 
 			and timestamp <= ?
 		group by metric
 	`
 
-	rows, err := cw.cs.Query(ctx, query, cw.tenantID, svc.Label(), start, end)
+ rows, err := cw.cs.Query(ctx, query, svc.Label(), start, end)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query metrics from ClickHouse: %w", err)
 	}

@@ -77,7 +77,7 @@ func TestCostwatch(t *testing.T) {
 
 	// ===========================================================================
 	// Costwatch
-	wtc, err := costwatch.New(ctx, log, c, "test-tenant")
+ wtc, err := costwatch.New(ctx, log, c)
 	assert.NilError(t, err)
 
 	// ===========================================================================

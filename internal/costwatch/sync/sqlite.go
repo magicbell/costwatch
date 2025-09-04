@@ -11,16 +11,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Store persists last-synced timestamps per tenant/service/metric in SQLite.
+// Store persists last-synced timestamps per service/metric in SQLite.
 // It is a minimal persistence layer to avoid double fetching windows.
 //
 // Schema:
 //   create table if not exists sync_state (
-//     tenant_id   text not null,
 //     service     text not null,
 //     metric      text not null,
 //     last_synced timestamp not null,
-//     primary key (tenant_id, service, metric)
+//     primary key (service, metric)
 //   );
 //
 // Timestamps are stored in UTC.
@@ -57,11 +56,10 @@ func Open(path string) (*Store, error) {
 func ensureSchema(db *sql.DB) error {
 	_, err := db.Exec(`
 		create table if not exists sync_state (
-		  tenant_id   text not null,
 		  service     text not null,
 		  metric      text not null,
 		  last_synced timestamp not null,
-		  primary key (tenant_id, service, metric)
+		  primary key (service, metric)
 		);
 	`)
 	return err
@@ -75,8 +73,8 @@ func (s *Store) Close() error {
 }
 
 // Get returns the last synced timestamp and whether it exists.
-func (s *Store) Get(ctx context.Context, tenantID, service, metric string) (time.Time, bool, error) {
-	row := s.db.QueryRowContext(ctx, `select last_synced from sync_state where tenant_id=? and service=? and metric=?`, tenantID, service, metric)
+func (s *Store) Get(ctx context.Context, service, metric string) (time.Time, bool, error) {
+	row := s.db.QueryRowContext(ctx, `select last_synced from sync_state where service=? and metric=?`, service, metric)
 	var ts time.Time
 	err := row.Scan(&ts)
 	if err != nil {
@@ -89,11 +87,11 @@ func (s *Store) Get(ctx context.Context, tenantID, service, metric string) (time
 }
 
 // Set upserts the last synced timestamp for the given key.
-func (s *Store) Set(ctx context.Context, tenantID, service, metric string, t time.Time) error {
+func (s *Store) Set(ctx context.Context, service, metric string, t time.Time) error {
 	_, err := s.db.ExecContext(ctx, `
-		insert into sync_state(tenant_id, service, metric, last_synced)
-		values(?, ?, ?, ?)
-		on conflict(tenant_id, service, metric) do update set last_synced=excluded.last_synced
-	`, tenantID, service, metric, t.UTC())
+		insert into sync_state(service, metric, last_synced)
+		values(?, ?, ?)
+		on conflict(service, metric) do update set last_synced=excluded.last_synced
+	`, service, metric, t.UTC())
 	return err
 }

@@ -19,7 +19,6 @@ func (c *Client) Setup(ctx context.Context, dbName string) error {
 
 	if err := c.Exec(ctx, fmt.Sprintf(
 		`create table if not exists %s (
-			tenant_id String,
 			service String,
 			metric String,
 			value Float64,
@@ -28,13 +27,11 @@ func (c *Client) Setup(ctx context.Context, dbName string) error {
 		ENGINE = ReplacingMergeTree()
 		TTL toDateTime(timestamp) + toIntervalDay(90)
 		order by (
-			tenant_id,
 			service,
 			metric,
 			timestamp
 		)
 		primary key (
-			tenant_id,
 			service,
 			metric,
 			timestamp
