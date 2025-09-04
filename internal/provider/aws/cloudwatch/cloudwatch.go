@@ -2,7 +2,7 @@ package cloudwatch
 
 import (
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/costwatchai/costwatch"
+	"github.com/costwatchai/costwatch/internal/costwatch"
 )
 
 var _ costwatch.Service = (*Service)(nil)

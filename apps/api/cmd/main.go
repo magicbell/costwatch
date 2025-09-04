@@ -6,8 +6,12 @@ import (
 	"os"
 
 	"github.com/ardanlabs/conf/v3"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/costwatchai/costwatch/apps/api"
 	"github.com/costwatchai/costwatch/internal/appconfig"
+	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
+	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch/metric"
 	"github.com/magicbell/magicbell/src/gofoundation/logger"
 )
 
@@ -43,6 +47,12 @@ func run(log *slog.Logger, env string) error {
 		return fmt.Errorf("generating config for output: %w", err)
 	}
 	log.Debug("startup", "config", out)
+
+	// Register services/metrics for pricing-only usage (no AWS calls needed here).
+	svc := cloudwatch.NewService(aws.Config{})
+	ib := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), nil)
+	svc.NewMetric(ib)
+	costwatch.RegisterGlobalService(svc)
 
 	// Monolith
 	mono := api.NewMonolith(log, cfg)

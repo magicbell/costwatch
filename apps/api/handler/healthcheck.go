@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func (r *Response) Marshal() (json.RawMessage, error) {
 }
 
 func (r *Response) Name() string {
-	return "PingResponse"
+	return "HealthCheckResponse"
 }
 
 func (r *Response) Schema() []byte {
@@ -46,7 +46,7 @@ func (r *Response) Unmarshal(data json.RawMessage) error {
 	return json.Unmarshal(data, r)
 }
 
-func PingHandler(ctx context.Context, r *http.Request, _ model.Nil) (rsp *Response, err error) {
+func HealthCheck(ctx context.Context, r *http.Request, _ model.Nil) (rsp *Response, err error) {
 	ver, ok := os.LookupEnv("APP_VERSION")
 	if !ok {
 		ver = time.Now().String()

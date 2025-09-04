@@ -9,8 +9,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscloudwatch "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
-	"github.com/costwatchai/costwatch"
 	"github.com/costwatchai/costwatch/internal/clickstore"
+	"github.com/costwatchai/costwatch/internal/costwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch/metric"
 )
@@ -70,6 +70,9 @@ func run(ctx context.Context, log *slog.Logger) error {
 	ibMtr := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), awscloudwatch.NewFromConfig(awsCfg))
 	svc.NewMetric(ibMtr)
 
+	// Also expose this service/metric for pricing lookups globally.
+	costwatch.RegisterGlobalService(svc)
+
 	// ===========================================================================
 	// Watch Costs
 	start := time.Now().UTC().Add(-2 * 24 * time.Hour).Truncate(24 * time.Hour)
@@ -80,7 +83,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 		return fmt.Errorf("wtc.FetchMetrics: %w", err)
 	}
 
-	usg, err := wtc.ServiceUsage(ctx, svc.Label(), time.Now().Add(-1*time.Hour), time.Now())
+	usg, err := wtc.ServiceUsage(ctx, svc, time.Now().Add(-1*time.Hour), time.Now())
 	if err != nil {
 		return fmt.Errorf("wtc.ServiceUsage: %w", err)
 	}

@@ -49,6 +49,7 @@ processes:
     working_dir: .
     command: go tool task run-api
     ready_log_line: 'listening on'
+    is_dotenv_disabled: true
     is_tty: true
     availability:
       restart: always

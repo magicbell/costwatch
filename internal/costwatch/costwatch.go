@@ -59,7 +59,7 @@ func (cw *CostWatch) RegisterService(svc Service) error {
 
 func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time.Time) error {
 	// Prepare batch for bulk insertion
-	batch, err := cw.cs.PrepareBatch(ctx, "INSERT INTO metrics (tenant_id, service, metric, value, timestamp)")
+	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (tenant_id, service, metric, value, timestamp)")
 	if err != nil {
 		return fmt.Errorf("prepare batch: %w", err)
 	}
@@ -103,15 +103,15 @@ func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.T
 
 	// Query ClickHouse for aggregated metrics data
 	query := `
-		SELECT 
+		select 
 			metric,
 			sum(value) as total_units
-		FROM metrics 
-		WHERE tenant_id = ? 
-			AND service = ? 
-			AND timestamp >= ? 
-			AND timestamp <= ?
-		GROUP BY metric
+		from metrics 
+		where tenant_id = ? 
+			and service = ? 
+			and timestamp >= ? 
+			and timestamp <= ?
+		group by metric
 	`
 
 	rows, err := cw.cs.Query(ctx, query, cw.tenantID, svc.Label(), start, end)

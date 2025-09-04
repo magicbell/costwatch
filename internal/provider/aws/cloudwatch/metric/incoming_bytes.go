@@ -10,7 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/costwatchai/costwatch"
+	"github.com/costwatchai/costwatch/internal/costwatch"
+)
+
+const (
+	IncomingBytesPrice         = 50
+	IncomingBytesUnitsPerPrice = 1e9
 )
 
 var _ costwatch.Metric = (*IncomingBytes)(nil)
@@ -29,7 +34,7 @@ func NewIncomingBytes(log *slog.Logger, client *cloudwatch.Client) *IncomingByte
 
 // UnitsPerPrice implements costwatch.Metric.
 func (m *IncomingBytes) UnitsPerPrice() float64 {
-	return 1e9
+	return IncomingBytesUnitsPerPrice
 }
 
 func (m *IncomingBytes) Datapoints(ctx context.Context, label string, start time.Time, end time.Time) ([]costwatch.Datapoint, error) {
@@ -62,5 +67,5 @@ func (m *IncomingBytes) Label() string {
 }
 
 func (m *IncomingBytes) Price() float64 {
-	return 50
+	return IncomingBytesPrice
 }

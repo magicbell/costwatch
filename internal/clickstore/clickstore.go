@@ -15,7 +15,7 @@ type Config struct {
 	Port     int    `conf:"default:9000,help:ClickHouse port"`
 	Username string `conf:"default:default,help:ClickHouse username"`
 	Password string `conf:"default:password,help:ClickHouse password,noprint"`
-	Database string `conf:"help:ClickHouse database"`
+	Database string `conf:"default:costwatch,help:ClickHouse database"`
 	SSL      bool   `conf:"help:Use secure connection to ClickHouse"`
 	Conn     struct {
 		Name    string `conf:"default:costwatch,help:ClickHouse connection name"`

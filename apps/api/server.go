@@ -76,3 +76,23 @@ func (s *Server) Handle(method string, path string, handler mason.WebHandler, mw
 func (s *Server) Respond(ctx context.Context, w http.ResponseWriter, data any, status int) error {
 	return web.Respond(ctx, w, data, status)
 }
+
+// ServeHTTP implements http.Handler and applies global CORS headers.
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Basic permissive CORS. Adjust allowed origins/headers if needed.
+	h := w.Header()
+	h.Set("Vary", "Origin")
+	h.Set("Access-Control-Allow-Origin", "*")
+	h.Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+	h.Set("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Requested-With")
+	h.Set("Access-Control-Expose-Headers", "Content-Length,Content-Type")
+	h.Set("Access-Control-Max-Age", "86400")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	// Delegate to the embedded server for actual routing/handling.
+	s.Server.ServeHTTP(w, r)
+}

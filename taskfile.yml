@@ -1,6 +1,6 @@
 version: '3'
 
-vars:
+env:
   NODE_OPTIONS: '--no-warnings'
   APP_ENV: 'development'
 

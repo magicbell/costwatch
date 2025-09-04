@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/costwatchai/costwatch"
 	"github.com/costwatchai/costwatch/internal/clickstore"
+	"github.com/costwatchai/costwatch/internal/costwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/provider/testprovider"
 	"gotest.tools/v3/assert"
