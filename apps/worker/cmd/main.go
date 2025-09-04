@@ -80,25 +80,15 @@ func run(ctx context.Context, log *slog.Logger) error {
 	// Also expose this service/metric for pricing lookups globally.
 	costwatch.RegisterGlobalService(svc)
 
-	// ===========================================================================
-	// Fetch last 48 hours on startup
-	end := time.Now().UTC()
-	start := end.Add(-48 * time.Hour)
-	log.Info("fetching metrics (backfill)", "start", start, "end", end)
-	err = wtc.FetchMetrics(ctx, start, end)
-	if err != nil {
-		log.Error("wtc.FetchMetrics: to fetch metrics %w", err.Error())
+	// Leading sync at startup
+	if err := wtc.Sync(ctx); err != nil {
+		log.Error("leading sync failed", "error", err)
 	}
 
-	// Scheduler: fetch last hour by convention every 30s
+	// Scheduler: run every 30s with CostWatch.Sync
 	interval := time.Second * 30
 	tickLog := log.WithGroup("scheduler")
-	lt := scheduler.NewLocalTicker(tickLog, interval, func(jctx context.Context) error {
-		end = time.Now().UTC()
-		start = end.Add(-1 * time.Hour)
-		tickLog.Info("fetching metrics (periodic)", "start", start, "end", end)
-		return wtc.FetchMetrics(jctx, start, end)
-	})
+	lt := scheduler.NewLocalTicker(tickLog, interval, wtc.Sync)
 	lt.Start(ctx)
 	defer lt.Stop()
 

@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
+	cwsync "github.com/costwatchai/costwatch/internal/costwatch/sync"
 )
 
 var ErrServiceAlreadyRegistered = fmt.Errorf("service already registered")
@@ -32,10 +34,20 @@ func (s *ServiceUsage) Cost() float64 {
 }
 
 type CostWatch struct {
-	log      *slog.Logger
-	cs       *clickstore.Client
-	tenantID string
-	svcs     map[string]Service
+	log       *slog.Logger
+	cs        *clickstore.Client
+	tenantID  string
+	svcs      map[string]Service
+	syncStore *cwsync.Store
+}
+
+// Services returns a snapshot of registered services.
+func (cw *CostWatch) Services() []Service {
+	res := make([]Service, 0, len(cw.svcs))
+	for _, s := range cw.svcs {
+		res = append(res, s)
+	}
+	return res
 }
 
 func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client, tenantID string) (*CostWatch, error) {
@@ -45,6 +57,65 @@ func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client, tenantID 
 		tenantID: tenantID,
 		svcs:     make(map[string]Service),
 	}, nil
+}
+
+// getSyncStore returns a lazily-initialized sync-state store.
+func (cw *CostWatch) getSyncStore() (*cwsync.Store, error) {
+	if cw.syncStore != nil {
+		return cw.syncStore, nil
+	}
+	path := os.Getenv("COSTWATCH_STATE_PATH")
+	if path == "" {
+		path = ".db/costwatch_state.db"
+	}
+	st, err := cwsync.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	cw.syncStore = st
+	return st, nil
+}
+
+// Sync performs a full sync across services/metrics using the sync-state to compute windows.
+// Rules:
+// - End is always "now" (UTC).
+// - Start is the oldest (earliest) of [last-synced, now-15m] to ensure we fetch at least 15 minutes.
+// - If no last-synced exists, default to a first-time lookback (currently 48 hours) to backfill history.
+func (cw *CostWatch) Sync(ctx context.Context) error {
+	st, err := cw.getSyncStore()
+	if err != nil {
+		return fmt.Errorf("open syncstate: %w", err)
+	}
+	now := time.Now().UTC()
+	fifteenAgo := now.Add(-15 * time.Minute)
+	for _, s := range cw.Services() {
+		for _, m := range s.Metrics() {
+			last, ok, err := st.Get(ctx, cw.tenantID, s.Label(), m.Label())
+			if err != nil {
+				cw.log.Error("syncstate.Get error", "service", s.Label(), "metric", m.Label(), "error", err)
+				continue
+			}
+			start := last
+			if !ok || last.IsZero() {
+				start = now.Add(-48 * time.Hour)
+			} else if last.Before(fifteenAgo) {
+				start = fifteenAgo
+			}
+			end := now
+			if !start.Before(end) {
+				continue
+			}
+			cw.log.Info("fetching metric", "service", s.Label(), "metric", m.Label(), "start", start, "end", end)
+			if err := cw.FetchMetricForService(ctx, s, m, start, end); err != nil {
+				cw.log.Error("FetchMetricForService failed", "service", s.Label(), "metric", m.Label(), "error", err)
+				continue
+			}
+			if err := st.Set(ctx, cw.tenantID, s.Label(), m.Label(), end); err != nil {
+				cw.log.Error("syncstate.Set error", "service", s.Label(), "metric", m.Label(), "error", err)
+			}
+		}
+	}
+	return nil
 }
 
 func (cw *CostWatch) RegisterService(svc Service) error {
@@ -129,6 +200,35 @@ func (cw *CostWatch) FetchMetricsForService(ctx context.Context, svc Service, st
 	return nil
 }
 
+// FetchMetricForService ingests datapoints only for the specified metric of a service.
+func (cw *CostWatch) FetchMetricForService(ctx context.Context, svc Service, m Metric, start time.Time, end time.Time) error {
+	if svc == nil || m == nil {
+		return fmt.Errorf("nil service or metric")
+	}
+	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (tenant_id, service, metric, value, timestamp)")
+	if err != nil {
+		return fmt.Errorf("prepare batch: %w", err)
+	}
+	dps, err := m.Datapoints(ctx, m.Label(), start, end)
+	if err != nil {
+		return fmt.Errorf("m.Datapoints: %w", err)
+	}
+	for _, dp := range dps {
+		if err := batch.Append(
+			cw.tenantID,
+			svc.Label(),
+			m.Label(),
+			dp.Value,
+			dp.Timestamp,
+		); err != nil {
+			return fmt.Errorf("batch append: %w", err)
+		}
+	}
+	if err := batch.Send(); err != nil {
+		return fmt.Errorf("batch send: %w", err)
+	}
+	return nil
+}
 
 func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.Time, end time.Time) (map[string]Usage, error) {
 	svc, exists := cw.svcs[svc.Label()]
