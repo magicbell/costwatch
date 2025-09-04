@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -13,6 +15,7 @@ import (
 	"github.com/costwatchai/costwatch/internal/costwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch/metric"
+	"github.com/costwatchai/costwatch/internal/scheduler"
 )
 
 func main() {
@@ -30,6 +33,10 @@ func main() {
 func run(ctx context.Context, log *slog.Logger) error {
 	log.Info("Starting CostWatch...")
 	fmt.Println("CostWatch started")
+
+	// Set up cancellable context with OS signals for graceful shutdown.
+	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	// ===========================================================================
 	// Clickhouse Connection
@@ -74,23 +81,29 @@ func run(ctx context.Context, log *slog.Logger) error {
 	costwatch.RegisterGlobalService(svc)
 
 	// ===========================================================================
-	// Watch Costs
-	start := time.Now().UTC().Add(-2 * 24 * time.Hour).Truncate(24 * time.Hour)
+	// Fetch last 48 hours on startup
 	end := time.Now().UTC()
-	log.Debug("fetching metrics", "start", start, "end", end)
-
-	if err := wtc.FetchMetrics(ctx, start, end); err != nil {
-		return fmt.Errorf("wtc.FetchMetrics: %w", err)
-	}
-
-	usg, err := wtc.ServiceUsage(ctx, svc, time.Now().Add(-1*time.Hour), time.Now())
+	start := end.Add(-48 * time.Hour)
+	log.Info("fetching metrics (backfill)", "start", start, "end", end)
+	err = wtc.FetchMetrics(ctx, start, end)
 	if err != nil {
-		return fmt.Errorf("wtc.ServiceUsage: %w", err)
+		log.Error("wtc.FetchMetrics: to fetch metrics %w", err.Error())
 	}
 
-	for l, m := range usg {
-		log.Debug("Usage", "label", l, "cost", m.Cost(), "usage", m.Units())
-	}
+	// Scheduler: fetch last hour by convention every 30s
+	interval := time.Second * 30
+	tickLog := log.WithGroup("scheduler")
+	lt := scheduler.NewLocalTicker(tickLog, interval, func(jctx context.Context) error {
+		end = time.Now().UTC()
+		start = end.Add(-1 * time.Hour)
+		tickLog.Info("fetching metrics (periodic)", "start", start, "end", end)
+		return wtc.FetchMetrics(jctx, start, end)
+	})
+	lt.Start(ctx)
+	defer lt.Stop()
 
+	// Block until shutdown signal.
+	<-ctx.Done()
+	log.Info("CostWatch worker shutting down", "reason", ctx.Err())
 	return nil
 }

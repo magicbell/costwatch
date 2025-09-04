@@ -95,6 +95,41 @@ func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time
 	return nil
 }
 
+// FetchMetricsForService is like FetchMetrics but only for the given service.
+func (cw *CostWatch) FetchMetricsForService(ctx context.Context, svc Service, start time.Time, end time.Time) error {
+	if svc == nil {
+		return fmt.Errorf("nil service")
+	}
+
+	// Prepare a batch for bulk insertion
+	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (tenant_id, service, metric, value, timestamp)")
+	if err != nil {
+		return fmt.Errorf("prepare batch: %w", err)
+	}
+	for _, m := range svc.Metrics() {
+		dps, err := m.Datapoints(ctx, m.Label(), start, end)
+		if err != nil {
+			return fmt.Errorf("m.Datapoints: %w", err)
+		}
+		for _, dp := range dps {
+			if err := batch.Append(
+				cw.tenantID,
+				svc.Label(),
+				m.Label(),
+				dp.Value,
+				dp.Timestamp,
+			); err != nil {
+				return fmt.Errorf("batch append: %w", err)
+			}
+		}
+	}
+	if err := batch.Send(); err != nil {
+		return fmt.Errorf("batch send: %w", err)
+	}
+	return nil
+}
+
+
 func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.Time, end time.Time) (map[string]Usage, error) {
 	svc, exists := cw.svcs[svc.Label()]
 	if !exists {
