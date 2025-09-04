@@ -54,5 +54,5 @@ func ComputeCost(serviceName, metricName string, units float64) (float64, bool) 
 	if upp == 0 {
 		return 0, false
 	}
-	return math.Round((units/upp)*m.Price()*100) / 100, true
+	return math.Round((units/upp)*m.Price()) / 100, true
 }

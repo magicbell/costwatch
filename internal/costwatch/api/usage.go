@@ -148,6 +148,82 @@ func (m *API) SelectAnomalies(ctx context.Context, start time.Time, end time.Tim
 	return
 }
 
+func (m *API) SelectUsagePercentiles(ctx context.Context, start time.Time, end time.Time, interval int) (res []costwatch.PercentileRecord, err error) {
+	qry := `
+		WITH
+			? AS start_ts,
+			? AS end_ts,
+			toIntervalSecond(?)                AS bucket,
+			toStartOfInterval(end_ts, bucket)  AS end_bucket   
+		
+		, by_bucket AS (
+			SELECT
+				service,
+				metric,
+				toStartOfInterval(timestamp, bucket)     AS bucket_ts,
+				sum(value)                               AS bucket_usage
+			FROM metrics FINAL
+			WHERE timestamp >= start_ts
+			  AND timestamp <  end_bucket
+			GROUP BY service, metric, bucket_ts
+		)
+		
+		SELECT
+			service,
+			metric,
+			toFloat64(quantileTDigest(0.50)(bucket_usage)) AS p50,
+			toFloat64(quantileTDigest(0.90)(bucket_usage)) AS p90,
+			toFloat64(quantileTDigest(0.95)(bucket_usage)) AS p95,
+			toFloat64(max(bucket_usage))                   AS pmax
+		FROM by_bucket
+		GROUP BY service, metric
+		ORDER BY service, metric;
+	`
+
+	if err = m.store.Select(ctx, &res, qry, start, end, interval); err != nil {
+		err = fmt.Errorf("click.Select: %w", err)
+		return
+	}
+	return
+}
+
+func (a *API) UsagePercentiles(ctx context.Context, _ *http.Request, _ model.Nil) (res *QueryResult[PercentileRecord], err error) {
+	end := time.Now().UTC()
+	start := end.Add(-7 * 24 * time.Hour)
+	interval := 3600
+
+	recs, err := a.SelectUsagePercentiles(ctx, start, end, interval)
+	if err != nil {
+		return res, fmt.Errorf("SelectUsagePercentiles: %w", err)
+	}
+
+	// Convert averages (units) to costs, similar to other handlers.
+	items := make([]PercentileRecord, 0, len(recs))
+	for _, r := range recs {
+		c50, _ := costwatch.ComputeCost(r.Service, r.Metric, r.P50)
+		c90, _ := costwatch.ComputeCost(r.Service, r.Metric, r.P90)
+		c95, _ := costwatch.ComputeCost(r.Service, r.Metric, r.P95)
+		cMax, _ := costwatch.ComputeCost(r.Service, r.Metric, r.PMax)
+
+		items = append(items, PercentileRecord{
+			Service: r.Service,
+			Metric:  r.Metric,
+			P50:     c50,
+			P90:     c90,
+			P95:     c95,
+			PMax:    cMax,
+		})
+	}
+
+	res = &QueryResult[PercentileRecord]{
+		Items:    items,
+		FromDate: start,
+		ToDate:   end,
+		Interval: 0,
+	}
+	return
+}
+
 func (a *API) Anomalies(ctx context.Context, _ *http.Request, _ model.Nil) (res *QueryResult[AnomalyRecord], err error) {
 	end := time.Now().UTC()
 	start := end.Add(-28 * 24 * time.Hour)

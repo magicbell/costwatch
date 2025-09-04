@@ -1,6 +1,8 @@
 import { Table } from '@chakra-ui/react';
 import React from 'react';
 
+import { formatCurrency, formatDateTime, formatNumber } from '../lib/format';
+
 export type AnomalyItem = {
   service: string;
   metric: string;
@@ -51,22 +53,15 @@ function AnomaliesTableComponent({ data, onHoverTimestamp, onLeave }: AnomaliesT
             cursor="pointer"
             _hover={{ bg: 'gray.50', _dark: { bg: 'whiteAlpha.100' } }}
           >
-            <Table.Cell>
-              {new Date(r.timestamp).toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-              })}
-            </Table.Cell>
+            <Table.Cell>{formatDateTime(r.timestamp)}</Table.Cell>
             <Table.Cell>{r.service}</Table.Cell>
             <Table.Cell>{r.metric}</Table.Cell>
+            <Table.Cell textAlign="right">{formatCurrency(r.cost)}</Table.Cell>
             <Table.Cell textAlign="right">
-              ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(r.cost || 0)}
+              {typeof r.z_score === 'number'
+                ? formatNumber(r.z_score, { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+                : '—'}
             </Table.Cell>
-            <Table.Cell textAlign="right">{typeof r.z_score === 'number' ? r.z_score.toFixed(2) : '—'}</Table.Cell>
           </Table.Row>
         ))}
       </Table.Body>

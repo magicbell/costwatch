@@ -34,7 +34,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	log.Info("Starting CostWatch...")
 	fmt.Println("CostWatch started")
 
-	// Set up cancellable context with OS signals for graceful shutdown.
+	// SetLastSyncDate up cancellable context with OS signals for graceful shutdown.
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 

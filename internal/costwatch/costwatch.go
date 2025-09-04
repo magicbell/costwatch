@@ -88,9 +88,9 @@ func (cw *CostWatch) Sync(ctx context.Context) error {
 	fifteenAgo := now.Add(-15 * time.Minute)
 	for _, s := range cw.Services() {
 		for _, m := range s.Metrics() {
-   last, ok, err := st.Get(ctx, s.Label(), m.Label())
+			last, ok, err := st.GetLastSyncDate(ctx, s.Label(), m.Label())
 			if err != nil {
-				cw.log.Error("syncstate.Get error", "service", s.Label(), "metric", m.Label(), "error", err)
+				cw.log.Error("syncstate.GetLastSyncDate error", "service", s.Label(), "metric", m.Label(), "error", err)
 				continue
 			}
 			start := last
@@ -108,8 +108,8 @@ func (cw *CostWatch) Sync(ctx context.Context) error {
 				cw.log.Error("FetchMetricForService failed", "service", s.Label(), "metric", m.Label(), "error", err)
 				continue
 			}
-   if err := st.Set(ctx, s.Label(), m.Label(), end); err != nil {
-				cw.log.Error("syncstate.Set error", "service", s.Label(), "metric", m.Label(), "error", err)
+			if err := st.SetLastSyncDate(ctx, s.Label(), m.Label(), end); err != nil {
+				cw.log.Error("syncstate.SetLastSyncDate error", "service", s.Label(), "metric", m.Label(), "error", err)
 			}
 		}
 	}
@@ -143,7 +143,7 @@ func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time
 
 			// Add all datapoints to the batch
 			for _, dp := range dps {
-    if err := batch.Append(
+				if err := batch.Append(
 					s.Label(),
 					m.Label(),
 					dp.Value,
@@ -201,7 +201,7 @@ func (cw *CostWatch) FetchMetricForService(ctx context.Context, svc Service, m M
 	if svc == nil || m == nil {
 		return fmt.Errorf("nil service or metric")
 	}
- batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (service, metric, value, timestamp)")
+	batch, err := cw.cs.PrepareBatch(ctx, "insert into metrics (service, metric, value, timestamp)")
 	if err != nil {
 		return fmt.Errorf("prepare batch: %w", err)
 	}
@@ -232,7 +232,7 @@ func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.T
 	}
 
 	// Query ClickHouse for aggregated metrics data
- query := `
+	query := `
 		select 
 			metric,
 			sum(value) as total_units
@@ -243,7 +243,7 @@ func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.T
 		group by metric
 	`
 
- rows, err := cw.cs.Query(ctx, query, svc.Label(), start, end)
+	rows, err := cw.cs.Query(ctx, query, svc.Label(), start, end)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query metrics from ClickHouse: %w", err)
 	}

@@ -12,6 +12,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import { formatCurrency, formatDate, formatDateTime, formatTime } from '../lib/format';
+
 export type UsageItem = {
   service: string;
   metric: string;
@@ -49,13 +51,6 @@ export type UsageChartProps = {
   hoveredAnomalyTs?: number | null;
 };
 
-const numberFormatter = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  notation: 'compact',
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-});
-
 function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartProps) {
   const chartData = React.useMemo(
     () =>
@@ -91,12 +86,7 @@ function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartPr
       const m = d.getUTCMinutes();
       if (idx === 0 || idx === chartData.length - 1) return '';
       if (h === 0 && m === 0) {
-        return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-      }
-
-      return '';
-      if (h % 6 === 0 && m === 0) {
-        return d.toLocaleTimeString('en-US', { hour: 'numeric', timeZone: 'UTC' });
+        return formatDate(d);
       }
       return '';
     },
@@ -106,19 +96,15 @@ function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartPr
   const yTickCount = 5;
   const yTickFormatter = React.useCallback((v: number, idx: number) => {
     if (idx === 0 || idx === yTickCount - 1) return '';
-    return `$${numberFormatter.format(v)}`;
+    return formatCurrency(v);
   }, []);
 
   const tooltipLabelFormatter = React.useCallback((value: number) => {
-    return new Date(Number(value)).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    if (Number.isNaN(Number(value))) return '';
+    return formatDateTime(Number(value));
   }, []);
 
-  const tooltipValueFormatter = React.useCallback((value: number) => `$${currencyFormatter.format(value)}`, []);
+  const tooltipValueFormatter = React.useCallback((value: number) => formatCurrency(value), []);
 
   const domain = React.useMemo(() => {
     const min = Math.min(...chart.data.map((x) => x[chart.key('ts')]));
@@ -170,7 +156,7 @@ function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartPr
                 strokeDasharray={isHovered ? undefined : '4 2'}
                 strokeWidth={isHovered ? 3 : 1}
                 label={{
-                  value: new Date(a.x).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                  value: formatTime(a.x),
                   position: 'top',
                   dy: 12,
                   fill: chart.color('fg.error'),

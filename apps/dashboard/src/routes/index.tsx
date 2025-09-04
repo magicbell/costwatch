@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 
 import { AnomaliesTable } from '../components/anomalies-table';
+import { AveragesTable, type PercentilesResponse } from '../components/averages-table';
 import { type AnomaliesResponse, UsageChart, type UsageResponse } from '../components/usage-chart';
 
 export const Route = createFileRoute('/')({
@@ -28,6 +29,11 @@ function App() {
   const anomalies = useQuery<AnomaliesResponse>({
     queryKey: ['anomalies'],
     queryFn: () => fetch('http://localhost:4000/v1/anomalies').then((res) => res.json()),
+  });
+
+  const averages = useQuery<PercentilesResponse>({
+    queryKey: ['percentiles'],
+    queryFn: () => fetch('http://localhost:4000/v1/usage-percentiles').then((res) => res.json()),
   });
 
   // Shared hover state: anomaly timestamp in ms; null when none
@@ -55,6 +61,15 @@ function App() {
               hoveredAnomalyTs={hoveredAnomalyTs}
             />
           )}
+        </Card.Body>
+      </Card.Root>
+
+      <Card.Root variant="subtle">
+        <Card.Body gap={2}>
+          <Card.Title>Hourly costs</Card.Title>
+          <Card.Description>Hourly cost percentiles in the recent days.</Card.Description>
+
+          {averages.isLoading ? <Loader /> : <AveragesTable data={averages.data!} />}
         </Card.Body>
       </Card.Root>
 
