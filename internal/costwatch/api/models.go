@@ -42,6 +42,20 @@ type AnomalyWindow struct {
 	Cost      float64    `json:"cost"`
 }
 
+// AlertWindow represents a contiguous time window where the hourly cost exceeded
+// the configured threshold for a given service/metric. ExpectedCost is the
+// (threshold * hours in window). RealCost is the sum of costs in the window.
+// Diff is RealCost - ExpectedCost. DiffPercent is 100 * Diff / ExpectedCost
+// when ExpectedCost > 0, otherwise 0.
+type AlertWindow struct {
+	Service      string    `json:"service"`
+	Metric       string    `json:"metric"`
+	Start        time.Time `json:"start"`
+	End          time.Time `json:"end"`
+	ExpectedCost float64   `json:"expected_cost"`
+	RealCost     float64   `json:"real_cost"`
+}
+
 type PercentileRecord struct {
 	Service string  `json:"service"`
 	Metric  string  `json:"metric"`
