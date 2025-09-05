@@ -39,10 +39,6 @@ func (a *API) SetupRoutes(api *mason.API) {
 		Path("/usage").
 		WithOpID("usage"))
 
-	grp.Register(mason.HandleGet(a.Anomalies).
-		Path("/anomalies").
-		WithOpID("anomalies"))
-
 	grp.Register(mason.HandleGet(a.UsagePercentiles).
 		Path("/usage-percentiles").
 		WithOpID("usage_percentiles"))

@@ -23,25 +23,6 @@ type UsageRecord struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-type AnomalyRecord struct {
-	Service   string    `json:"service"`
-	Metric    string    `json:"metric"`
-	Timestamp time.Time `json:"timestamp"`
-	Sum       float64   `json:"sum"`
-	Diff      float64   `json:"diff"`
-	ZScore    float64   `json:"z_score"`
-	Cost      float64   `json:"cost"`
-}
-
-type AnomalyWindow struct {
-	Service   string     `json:"service"`
-	Metric    string     `json:"metric"`
-	StartTime time.Time  `json:"start"`
-	EndTime   *time.Time `json:"end"`
-	Value     float64    `json:"value"`
-	Cost      float64    `json:"cost"`
-}
-
 // AlertWindow represents a contiguous time window where the hourly cost exceeded
 // the configured threshold for a given service/metric. ExpectedCost is the
 // (threshold * hours in window). RealCost is the sum of costs in the window.
