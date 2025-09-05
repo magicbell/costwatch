@@ -5,14 +5,14 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
-  ReferenceLine,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 
-import { formatCurrency, formatDate, formatDateTime, formatTime } from '../lib/format';
+import { formatCurrency, formatDate, formatDateTime } from '../lib/format';
 
 export type UsageItem = {
   service: string;
@@ -45,13 +45,30 @@ export type AnomaliesResponse = {
   items: AnomalyItem[];
 };
 
+export type AlertWindowItem = {
+  service: string;
+  metric: string;
+  start: string;
+  end: string;
+  expected_cost: number;
+  real_cost: number;
+};
+
+export type AlertWindowsResponse = {
+  from_date: string;
+  to_date: string;
+  interval: number;
+  items: AlertWindowItem[];
+};
+
 export type UsageChartProps = {
   data: UsageResponse;
   anomalies?: AnomaliesResponse;
+  alertWindows?: AlertWindowsResponse;
   hoveredAnomalyTs?: number | null;
 };
 
-function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartProps) {
+function UsageChartComponent({ data, alertWindows }: UsageChartProps) {
   const chartData = React.useMemo(
     () =>
       data.items.map((x) => {
@@ -74,10 +91,10 @@ function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartPr
 
   const chart = useChart({ data: chartData, series });
 
-  const anomalyLines = React.useMemo(() => {
-    if (!anomalies || anomalies.items.length === 0) return [] as { x: number }[];
-    return anomalies.items.map((it) => ({ x: new Date(it.timestamp).getTime() }));
-  }, [anomalies]);
+  const alertAreas = React.useMemo(() => {
+    if (!alertWindows || alertWindows.items.length === 0) return [] as { x1: number; x2: number }[];
+    return alertWindows.items.map((w) => ({ x1: new Date(w.start).getTime(), x2: new Date(w.end).getTime() }));
+  }, [alertWindows]);
 
   const xTickFormatter = React.useCallback(
     (value: number, idx: number) => {
@@ -128,7 +145,7 @@ function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartPr
             tickFormatter={xTickFormatter}
           />
           <YAxis
-            axisLine={false}
+            axisLine={true}
             tickLine={false}
             tickMargin={12}
             tickCount={yTickCount}
@@ -145,26 +162,20 @@ function UsageChartComponent({ data, anomalies, hoveredAnomalyTs }: UsageChartPr
           />
           <Legend content={<Chart.Legend />} />
 
-          {anomalyLines.map((a, i) => {
-            const isHovered = hoveredAnomalyTs != null && a.x === hoveredAnomalyTs;
-            return (
-              <ReferenceLine
-                key={`anomaly-${i}`}
-                x={a.x}
-                ifOverflow="extendDomain"
-                stroke={isHovered ? chart.color('fg.error') : chart.color('border.error')}
-                strokeDasharray={isHovered ? undefined : '4 2'}
-                strokeWidth={isHovered ? 3 : 1}
-                label={{
-                  value: formatTime(a.x),
-                  position: 'top',
-                  dy: 12,
-                  fill: chart.color('fg.error'),
-                  style: { fontSize: 10, fontWeight: 'bold' },
-                }}
-              />
-            );
-          })}
+          {alertAreas.map((a, i) => (
+            <ReferenceArea
+              key={`alert-${i}`}
+              ifOverflow="extendDomain"
+              x1={a.x1}
+              x2={a.x2}
+              fill={chart.color('bg.error')}
+              fillOpacity={1}
+              stroke={chart.color('border.error')}
+              strokeDasharray="4 4"
+              strokeOpacity={0.4}
+              strokeWidth={1}
+            />
+          ))}
 
           {chart.series.map((item) => (
             <Bar

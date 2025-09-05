@@ -1,5 +1,5 @@
 import { Input, Table } from '@chakra-ui/react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
 import { formatCurrency, formatNumber } from '../lib/format';
@@ -38,6 +38,8 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
     });
   }, [data]);
 
+  const client = useQueryClient();
+
   const query = useQuery<{ items: AlertRule[] }>({
     queryKey: ['alert-rules'],
     queryFn: async () => {
@@ -61,6 +63,9 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
       });
       if (!res.ok) throw new Error('Failed to update threshold');
       return true;
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['alert-windows'] });
     },
   });
 
