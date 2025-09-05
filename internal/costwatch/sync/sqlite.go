@@ -110,9 +110,10 @@ func Open(path string) (*Store, error) {
 func ensureSchema(db *sql.DB) error {
 	_, err := db.Exec(`
 		create table if not exists sync_state (
-		  service     text not null,
-		  metric      text not null,
-		  last_synced timestamp not null,
+		  service        text not null,
+		  metric         text not null,
+		  last_synced    timestamp not null,
+		  last_notified  timestamp,
 		  primary key (service, metric)
 		);
 
@@ -133,8 +134,8 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-// GetLastSyncDate returns the last synced timestamp and whether it exists.
-func (s *Store) GetLastSyncDate(ctx context.Context, service, metric string) (time.Time, bool, error) {
+// GetLastSync returns the last synced timestamp and whether it exists.
+func (s *Store) GetLastSync(ctx context.Context, service, metric string) (time.Time, bool, error) {
 	row := s.db.QueryRowContext(ctx, `select last_synced from sync_state where service=? and metric=?`, service, metric)
 	var ts time.Time
 	err := row.Scan(&ts)
@@ -147,12 +148,38 @@ func (s *Store) GetLastSyncDate(ctx context.Context, service, metric string) (ti
 	return ts.UTC(), true, nil
 }
 
-// SetLastSyncDate upserts the last synced timestamp for the given key.
-func (s *Store) SetLastSyncDate(ctx context.Context, service, metric string, t time.Time) error {
+// SetLastSync upserts the last synced timestamp for the given key.
+func (s *Store) SetLastSync(ctx context.Context, service, metric string, t time.Time) error {
 	_, err := s.db.ExecContext(ctx, `
 		insert into sync_state(service, metric, last_synced)
 		values(?, ?, ?)
 		on conflict(service, metric) do update set last_synced=excluded.last_synced
 	`, service, metric, t.UTC())
+	return err
+}
+
+// GetLastNotified returns the last time an alert was sent for the given service/metric.
+func (s *Store) GetLastNotified(ctx context.Context, service, metric string) (time.Time, bool, error) {
+	row := s.db.QueryRowContext(ctx, `select last_notified from sync_state where service=? and metric=?`, service, metric)
+	var ts sql.NullTime
+	err := row.Scan(&ts)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return time.Time{}, false, nil
+		}
+		return time.Time{}, false, err
+	}
+	if !ts.Valid {
+		return time.Time{}, false, nil
+	}
+	return ts.Time.UTC(), true, nil
+}
+
+// SetLastNotified upserts the last time an alert was sent for the given service/metric.
+func (s *Store) SetLastNotified(ctx context.Context, service, metric string, t time.Time) error {
+	_, err := s.db.ExecContext(ctx, `
+		update sync_state set last_notified = ?
+		where service = ? and metric = ?
+	`, t.UTC(), service, metric)
 	return err
 }

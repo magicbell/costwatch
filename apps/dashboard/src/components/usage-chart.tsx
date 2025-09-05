@@ -28,23 +28,6 @@ export type UsageResponse = {
   items: UsageItem[];
 };
 
-export type AnomalyItem = {
-  service: string;
-  metric: string;
-  timestamp: string; // ISO date (start time)
-  sum: number;
-  diff: number;
-  z_score: number;
-  cost: number;
-};
-
-export type AnomaliesResponse = {
-  from_date: string;
-  to_date: string;
-  interval: number; // seconds
-  items: AnomalyItem[];
-};
-
 export type AlertWindowItem = {
   service: string;
   metric: string;
@@ -63,12 +46,11 @@ export type AlertWindowsResponse = {
 
 export type UsageChartProps = {
   data: UsageResponse;
-  anomalies?: AnomaliesResponse;
   alertWindows?: AlertWindowsResponse;
-  hoveredAnomalyTs?: number | null;
+  hoveredAlertWindow?: { start: number; end: number } | null;
 };
 
-function UsageChartComponent({ data, alertWindows }: UsageChartProps) {
+function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageChartProps) {
   const chartData = React.useMemo(
     () =>
       data.items.map((x) => {
@@ -145,7 +127,7 @@ function UsageChartComponent({ data, alertWindows }: UsageChartProps) {
             tickFormatter={xTickFormatter}
           />
           <YAxis
-            axisLine={true}
+            axisLine={false}
             tickLine={false}
             tickMargin={12}
             tickCount={yTickCount}
@@ -162,20 +144,24 @@ function UsageChartComponent({ data, alertWindows }: UsageChartProps) {
           />
           <Legend content={<Chart.Legend />} />
 
-          {alertAreas.map((a, i) => (
-            <ReferenceArea
-              key={`alert-${i}`}
-              ifOverflow="extendDomain"
-              x1={a.x1}
-              x2={a.x2}
-              fill={chart.color('bg.error')}
-              fillOpacity={1}
-              stroke={chart.color('border.error')}
-              strokeDasharray="4 4"
-              strokeOpacity={0.4}
-              strokeWidth={1}
-            />
-          ))}
+          {alertAreas.map((a, i) => {
+            const isHovered =
+              !!hoveredAlertWindow && a.x1 === hoveredAlertWindow.start && a.x2 === hoveredAlertWindow.end;
+            return (
+              <ReferenceArea
+                key={`alert-${i}`}
+                ifOverflow="extendDomain"
+                x1={a.x1}
+                x2={a.x2}
+                fill={chart.color('bg.error')}
+                fillOpacity={hoveredAlertWindow && !isHovered ? 0.1 : 1}
+                stroke={chart.color('border.error')}
+                strokeDasharray="4 4"
+                strokeOpacity={hoveredAlertWindow && !isHovered ? 0.1 : 0.4}
+                strokeWidth={1}
+              />
+            );
+          })}
 
           {chart.series.map((item) => (
             <Bar

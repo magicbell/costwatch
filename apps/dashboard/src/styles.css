@@ -11,3 +11,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+.chakra-table__row {
+  background: transparent;
+}
+
+tbody .chakra-table__row:hover {
+  background: var(--chakra-colors-bg-emphasized);
+}
