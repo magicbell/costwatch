@@ -2,29 +2,10 @@ import { Input, Table } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
+import { alertRuleMutationOptions } from '../lib/api/alerts-mutation-options';
+import { alertRulesQueryOptions } from '../lib/api/alerts-query-options';
+import type { PercentilesResponse } from '../lib/api/usage';
 import { formatCurrency, formatNumber } from '../lib/format';
-
-export type PercentileItem = {
-  service: string;
-  metric: string;
-  p50: number;
-  p90: number;
-  p95: number;
-  pmax: number;
-};
-
-export type PercentilesResponse = {
-  from_date: string;
-  to_date: string;
-  interval: number; // seconds
-  items: PercentileItem[];
-};
-
-export type AlertRule = {
-  service: string;
-  metric: string;
-  threshold: number;
-};
 
 export type AveragesTableProps = {
   data: PercentilesResponse;
@@ -39,35 +20,8 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
   }, [data]);
 
   const client = useQueryClient();
-
-  const query = useQuery<{ items: AlertRule[] }>({
-    queryKey: ['alert-rules'],
-    queryFn: async () => {
-      const res = await fetch('http://localhost:4000/v1/alert-rules');
-      if (!res.ok) throw new Error('Failed to fetch alert rules');
-      return res.json();
-    },
-    initialData: { items: [] },
-    refetchInterval: 10000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
-  const mutation = useMutation({
-    mutationKey: ['update-threshold'],
-    mutationFn: async (payload: { service: string; metric: string; threshold: number }) => {
-      const res = await fetch('http://localhost:4000/v1/alert-rules', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to update threshold');
-      return true;
-    },
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ['alert-windows'] });
-    },
-  });
+  const query = useQuery(alertRulesQueryOptions);
+  const mutation = useMutation(alertRuleMutationOptions(client));
 
   if (rows.length === 0) return null;
 

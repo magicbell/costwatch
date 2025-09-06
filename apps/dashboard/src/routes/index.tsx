@@ -4,10 +4,20 @@ import { createFileRoute } from '@tanstack/react-router';
 import React from 'react';
 
 import { AlertWindowsTable } from '../components/alert-windows-table';
-import { AveragesTable, type PercentilesResponse } from '../components/averages-table';
-import { type AlertWindowsResponse, UsageChart, type UsageResponse } from '../components/usage-chart';
+import { AveragesTable } from '../components/averages-table';
+import { UsageChart } from '../components/usage-chart';
+import { alertWindowsQueryOptions } from '../lib/api/alerts-query-options';
+import { percentilesQueryOptions, usageQueryOptions } from '../lib/api/usage-query-options';
 
 export const Route = createFileRoute('/')({
+  loader: async ({ context: { queryClient } }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(usageQueryOptions),
+      queryClient.ensureQueryData(alertWindowsQueryOptions),
+      queryClient.ensureQueryData(percentilesQueryOptions),
+    ]);
+    return null;
+  },
   component: App,
 });
 
@@ -22,20 +32,9 @@ function Loader() {
 
 function App() {
   const [hoveredAlert, setHoveredAlert] = React.useState<{ start: number; end: number } | null>(null);
-  const usage = useQuery<UsageResponse>({
-    queryKey: ['usage'],
-    queryFn: () => fetch('http://localhost:4000/v1/usage').then((res) => res.json()),
-  });
-
-  const alertWindows = useQuery<AlertWindowsResponse>({
-    queryKey: ['alert-windows'],
-    queryFn: () => fetch('http://localhost:4000/v1/alert-windows').then((res) => res.json()),
-  });
-
-  const averages = useQuery<PercentilesResponse>({
-    queryKey: ['percentiles'],
-    queryFn: () => fetch('http://localhost:4000/v1/usage-percentiles').then((res) => res.json()),
-  });
+  const usage = useQuery(usageQueryOptions);
+  const alertWindows = useQuery(alertWindowsQueryOptions);
+  const averages = useQuery(percentilesQueryOptions);
 
   return (
     <VStack align="stretch" gap={6} p={4}>

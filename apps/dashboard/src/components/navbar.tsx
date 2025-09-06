@@ -1,6 +1,6 @@
 import { Flex, HStack, Image, Spacer } from '@chakra-ui/react';
 
-import { ColorModeButton } from '@/components/ui/color-mode.tsx';
+import { ColorModeButton } from '@/components/ui/color-mode';
 
 export function Navbar() {
   return (

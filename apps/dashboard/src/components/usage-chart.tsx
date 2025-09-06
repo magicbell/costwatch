@@ -12,37 +12,10 @@ import {
   YAxis,
 } from 'recharts';
 
+import type { AlertWindowsResponse } from '@/lib/api/alerts';
+import type { UsageResponse } from '@/lib/api/usage';
+
 import { formatCurrency, formatDate, formatDateTime } from '../lib/format';
-
-export type UsageItem = {
-  service: string;
-  metric: string;
-  cost: number;
-  timestamp: string; // ISO date
-};
-
-export type UsageResponse = {
-  from_date: string;
-  to_date: string;
-  interval: number; // seconds
-  items: UsageItem[];
-};
-
-export type AlertWindowItem = {
-  service: string;
-  metric: string;
-  start: string;
-  end: string | null;
-  expected_cost: number;
-  real_cost: number;
-};
-
-export type AlertWindowsResponse = {
-  from_date: string;
-  to_date: string;
-  interval: number;
-  items: AlertWindowItem[];
-};
 
 export type UsageChartProps = {
   data: UsageResponse;

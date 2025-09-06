@@ -6,10 +6,10 @@ import ReactDOM from 'react-dom/client';
 
 import { Provider } from '@/components/ui/provider';
 
-import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider.tsx';
+import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
-import { webVitals } from './web-vitals.ts';
+import { webVitals } from './web-vitals';
 
 // Create a new router instance
 
