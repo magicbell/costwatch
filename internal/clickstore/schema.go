@@ -2,8 +2,12 @@ package clickstore
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 )
+
+//go:embed sql/schema.sql
+var schemaSQL string
 
 func (c *Client) Setup(ctx context.Context, dbName string) error {
 	if dbName == "" {
@@ -17,27 +21,7 @@ func (c *Client) Setup(ctx context.Context, dbName string) error {
 		return fmt.Errorf("setup.CreateDB: %w", err)
 	}
 
-	if err := c.Exec(ctx, fmt.Sprintf(
-		`create table if not exists %s (
-			service String,
-			metric String,
-			value Float64,
-			timestamp DateTime64(3, 'UTC')
-		)
-		ENGINE = ReplacingMergeTree()
-		TTL toDateTime(timestamp) + toIntervalDay(90)
-		order by (
-			service,
-			metric,
-			timestamp
-		)
-		primary key (
-			service,
-			metric,
-			timestamp
-		)`,
-		tableFQN),
-	); err != nil {
+	if err := c.Exec(ctx, fmt.Sprintf(schemaSQL, tableFQN)); err != nil {
 		return fmt.Errorf("setup.CreateTable: %w", err)
 	}
 

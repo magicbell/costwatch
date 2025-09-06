@@ -1,14 +1,22 @@
-package handler
+package health
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"os"
-	"time"
 
+	"github.com/magicbell/mason"
 	"github.com/magicbell/mason/model"
 )
+
+// SetupRoutes registers the healthcheck route on the provided mason API.
+func SetupRoutes(api *mason.API) {
+	grp := api.NewRouteGroup("health")
+	grp.Register(mason.HandleGet(HealthCheck).
+		Path("/healthcheck").
+		WithOpID("healthcheck").
+		SkipIf(true))
+}
 
 var _ model.Entity = (*Response)(nil)
 
@@ -46,13 +54,7 @@ func (r *Response) Unmarshal(data json.RawMessage) error {
 	return json.Unmarshal(data, r)
 }
 
+// HealthCheck is the HTTP handler returning current version information.
 func HealthCheck(ctx context.Context, r *http.Request, _ model.Nil) (rsp *Response, err error) {
-	ver, ok := os.LookupEnv("APP_VERSION")
-	if !ok {
-		ver = time.Now().String()
-	}
-
-	return &Response{
-		Version: ver,
-	}, nil
+	return &Response{Version: GetVersion()}, nil
 }

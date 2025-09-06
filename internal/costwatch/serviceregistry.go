@@ -12,14 +12,25 @@ type serviceRegistry struct {
 
 var globalSvcReg = &serviceRegistry{data: make(map[string]Service)}
 
-// RegisterGlobalService registers or replaces a service in the global registry.
-func RegisterGlobalService(svc Service) {
+// RegisterService registers or replaces a service in the global registry.
+func RegisterService(svc Service) {
 	if svc == nil {
 		return
 	}
 	globalSvcReg.mu.Lock()
 	defer globalSvcReg.mu.Unlock()
 	globalSvcReg.data[svc.Label()] = svc
+}
+
+// ListServices returns a snapshot of all registered services.
+func ListServices() []Service {
+	globalSvcReg.mu.RLock()
+	defer globalSvcReg.mu.RUnlock()
+	res := make([]Service, 0, len(globalSvcReg.data))
+	for _, s := range globalSvcReg.data {
+		res = append(res, s)
+	}
+	return res
 }
 
 // FindService returns a registered service by name.

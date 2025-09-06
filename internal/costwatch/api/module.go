@@ -4,31 +4,26 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/costwatchai/costwatch/internal/appconfig"
 	"github.com/costwatchai/costwatch/internal/clickstore"
-	cwsync "github.com/costwatchai/costwatch/internal/costwatch/sync"
+	"github.com/costwatchai/costwatch/internal/sqlstore"
 	"github.com/magicbell/mason"
 )
 
 // API wires ClickHouse and CostWatch and exposes HTTP routes.
 type API struct {
-	log    *slog.Logger
-	store  *clickstore.Client
-	alerts *cwsync.Store
+	log   *slog.Logger
+	store *clickstore.Client
+	db    *sqlstore.Store
 }
 
-// New initializes ClickHouse and CostWatch for serving HTTP routes.
-func New(ctx context.Context, log *slog.Logger, cfg appconfig.Config) (*API, error) {
-	// Try to create a real ClickHouse client; on failure, fall back to TestStore for graceful local runs.
-	store, _ := clickstore.NewClient(ctx, log, cfg.Clickhouse)
-
-	// Open (or create) sqlite for alerts and sync state
-	alerts, _ := cwsync.Open(".db/costwatch_state.db")
+// New constructs the API with a pre-initialized ClickHouse client.
+func New(_ context.Context, log *slog.Logger, store *clickstore.Client) (*API, error) {
+	alerts, _ := sqlstore.Open()
 
 	return &API{
-		log:    log,
-		store:  store,
-		alerts: alerts,
+		log:   log,
+		store: store,
+		db:    alerts,
 	}, nil
 }
 

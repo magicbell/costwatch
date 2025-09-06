@@ -35,15 +35,15 @@ type UpdateAlertThresholdRequest struct {
 
 // UpdateAlertRule upserts a threshold in sqlite keyed by service+metric.
 func (a *API) UpdateAlertRule(ctx context.Context, _ *http.Request, ent *AlertRule, _ model.Nil) (res *AlertRule, err error) {
-	if err := a.alerts.SetAlertThreshold(ctx, ent.Service, ent.Metric, ent.Threshold); err != nil {
-		return nil, fmt.Errorf("alerts.SetAlertThreshold: %w", err)
+	if err := a.db.SetAlertThreshold(ctx, ent.Service, ent.Metric, ent.Threshold); err != nil {
+		return nil, fmt.Errorf("db.SetAlertThreshold: %w", err)
 	}
 
 	return ent, nil
 }
 
 func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res *ListResult[AlertRule], err error) {
-	recs, err := a.alerts.GetAlertRules(ctx)
+	recs, err := a.db.GetAlertRules(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetAlertRules: %w", err)
 	}
@@ -64,7 +64,7 @@ func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res
 }
 
 func (a *API) computeAlertWindows(ctx context.Context, start, end time.Time, interval int) ([]AlertWindow, error) {
-	wins, err := costwatch.ComputeAlertWindows(ctx, a.store, a.alerts, start, end, interval)
+	wins, err := costwatch.ComputeAlertWindows(ctx, a.store, a.db, start, end, interval)
 	if err != nil {
 		return nil, err
 	}

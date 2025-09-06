@@ -1,8 +1,9 @@
-package cwsync
+package sqlstore
 
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"errors"
 	"os"
 	"path/filepath"
@@ -10,19 +11,6 @@ import (
 
 	_ "modernc.org/sqlite"
 )
-
-// Store persists last-synced timestamps per service/metric in SQLite.
-// It is a minimal persistence layer to avoid double fetching windows.
-//
-// Schema:
-//   create table if not exists sync_state (
-//     service     text not null,
-//     metric      text not null,
-//     last_synced timestamp not null,
-//     primary key (service, metric)
-//   );
-//
-// Timestamps are stored in UTC.
 
 type Store struct {
 	db *sql.DB
@@ -83,8 +71,13 @@ func (s *Store) SetAlertThreshold(ctx context.Context, service, metric string, t
 }
 
 // Open opens (and creates if necessary) a SQLite database at the given path and ensures schema.
-func Open(path string) (*Store, error) {
-	// Ensure parent directory exists if using nested path (e.g., .db/costwatch_state.db)
+func Open() (*Store, error) {
+	path := os.Getenv("SQLITE_DB_PATH")
+	if path == "" {
+		path = ".db/costwatch.db"
+	}
+
+	// Ensure parent directory exists if using nested path (e.g., .db/costwatch.db)
 	if dir := filepath.Dir(path); dir != "." && dir != "" {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, err
@@ -107,23 +100,11 @@ func Open(path string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
-func ensureSchema(db *sql.DB) error {
-	_, err := db.Exec(`
-		create table if not exists sync_state (
-		  service        text not null,
-		  metric         text not null,
-		  last_synced    timestamp not null,
-		  last_notified  timestamp,
-		  primary key (service, metric)
-		);
+//go:embed sql/schema.sql
+var schemaSQL string
 
-		create table if not exists alert_rules (
-		  service   text not null,
-		  metric    text not null,
-		  threshold real not null,
-		  primary key (service, metric)
-		);
-	`)
+func ensureSchema(db *sql.DB) error {
+	_, err := db.Exec(schemaSQL)
 	return err
 }
 

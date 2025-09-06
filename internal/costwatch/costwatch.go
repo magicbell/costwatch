@@ -11,10 +11,8 @@ import (
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
-	cwsync "github.com/costwatchai/costwatch/internal/costwatch/sync"
+	"github.com/costwatchai/costwatch/internal/sqlstore"
 )
-
-var ErrServiceAlreadyRegistered = fmt.Errorf("service already registered")
 
 type Usage interface {
 	Units() float64
@@ -37,101 +35,31 @@ func (s *ServiceUsage) Cost() float64 {
 }
 
 type CostWatch struct {
-	log       *slog.Logger
-	cs        *clickstore.Client
-	svcs      map[string]Service
-	syncStore *cwsync.Store
-}
-
-// Services returns a snapshot of registered services.
-func (cw *CostWatch) Services() []Service {
-	res := make([]Service, 0, len(cw.svcs))
-	for _, s := range cw.svcs {
-		res = append(res, s)
-	}
-	return res
+	log *slog.Logger
+	cs  *clickstore.Client
+	db  *sqlstore.Store
 }
 
 func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client) (*CostWatch, error) {
 	return &CostWatch{
-		log:  log,
-		cs:   cs,
-		svcs: make(map[string]Service),
+		log: log,
+		cs:  cs,
 	}, nil
 }
 
 // getSyncStore returns a lazily-initialized sync-state store.
-func (cw *CostWatch) getSyncStore() (*cwsync.Store, error) {
-	if cw.syncStore != nil {
-		return cw.syncStore, nil
+func (cw *CostWatch) getSyncStore() (*sqlstore.Store, error) {
+	if cw.db != nil {
+		return cw.db, nil
 	}
-	path := os.Getenv("COSTWATCH_STATE_PATH")
-	if path == "" {
-		path = ".db/costwatch_state.db"
-	}
-	st, err := cwsync.Open(path)
+
+	db, err := sqlstore.Open()
 	if err != nil {
 		return nil, err
 	}
-	cw.log.Info("alerts: opened sqlite store", "path", path)
-	cw.syncStore = st
-	return st, nil
-}
 
-// Sync performs a full sync across services/metrics using the sync-state to compute windows.
-// Rules:
-// - End is always "now" (UTC).
-// - Start is the oldest (earliest) of [last-synced, now-15m] to ensure we fetch at least 15 minutes.
-// - If no last-synced exists, default to a first-time lookback (currently 48 hours) to backfill history.
-func (cw *CostWatch) Sync(ctx context.Context) error {
-	st, err := cw.getSyncStore()
-	if err != nil {
-		return fmt.Errorf("open syncstate: %w", err)
-	}
-	now := time.Now().UTC()
-	fifteenAgo := now.Add(-15 * time.Minute)
-	for _, s := range cw.Services() {
-		for _, m := range s.Metrics() {
-			last, ok, err := st.GetLastSync(ctx, s.Label(), m.Label())
-			if err != nil {
-				cw.log.Error("syncstate.GetLastSync error", "service", s.Label(), "metric", m.Label(), "error", err)
-				continue
-			}
-			start := last
-			if !ok || last.IsZero() {
-				start = now.Add(-48 * time.Hour)
-			} else if last.After(fifteenAgo) {
-				start = fifteenAgo
-			}
-			end := now
-			if !start.Before(end) {
-				continue
-			}
-			cw.log.Info("fetching metric", "service", s.Label(), "metric", m.Label(), "start", start, "end", end)
-			if err := cw.FetchMetricForService(ctx, s, m, start, end); err != nil {
-				cw.log.Error("FetchMetricForService failed", "service", s.Label(), "metric", m.Label(), "error", err)
-				continue
-			}
-			if err := st.SetLastSync(ctx, s.Label(), m.Label(), end); err != nil {
-				cw.log.Error("syncstate.SetLastSync error", "service", s.Label(), "metric", m.Label(), "error", err)
-			}
-		}
-	}
-	// After successful sync, attempt to send alerts.
-	if err := cw.sendAlerts(ctx); err != nil {
-		cw.log.Error("sendAlerts failed", "error", err)
-	}
-	return nil
-}
-
-func (cw *CostWatch) RegisterService(svc Service) error {
-	if _, exists := cw.svcs[svc.Label()]; exists {
-		return ErrServiceAlreadyRegistered
-	}
-
-	cw.svcs[svc.Label()] = svc
-
-	return nil
+	cw.db = db
+	return db, nil
 }
 
 func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time.Time) error {
@@ -142,7 +70,7 @@ func (cw *CostWatch) FetchMetrics(ctx context.Context, start time.Time, end time
 	}
 
 	// Collect all datapoints and add to batch
-	for _, s := range cw.svcs {
+	for _, s := range ListServices() {
 		for _, m := range s.Metrics() {
 			dps, err := m.Datapoints(ctx, m.Label(), start, end)
 			if err != nil {
@@ -234,7 +162,7 @@ func (cw *CostWatch) FetchMetricForService(ctx context.Context, svc Service, m M
 }
 
 func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.Time, end time.Time) (map[string]Usage, error) {
-	svc, exists := cw.svcs[svc.Label()]
+	svc, exists := FindService(svc.Label())
 	if !exists {
 		return nil, fmt.Errorf("service %s not registered", svc.Label())
 	}

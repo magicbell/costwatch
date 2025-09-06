@@ -77,15 +77,11 @@ func TestCostwatch(t *testing.T) {
 
 	// ===========================================================================
 	// Costwatch
- wtc, err := costwatch.New(ctx, log, c)
+	wtc, err := costwatch.New(ctx, log, c)
 	assert.NilError(t, err)
 
 	// ===========================================================================
-	// Register Service
-	err = wtc.RegisterService(svc)
-	assert.NilError(t, err)
-
-	err = wtc.RegisterService(svc)
+	costwatch.RegisterService(svc)
 
 	// ===========================================================================
 	// Run Costwatch Data Fetch

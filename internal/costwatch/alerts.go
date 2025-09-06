@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
-	cwsync "github.com/costwatchai/costwatch/internal/costwatch/sync"
+	"github.com/costwatchai/costwatch/internal/sqlstore"
 )
 
 // AlertWindow is a shared representation of an alert window computed from metrics
@@ -28,9 +28,9 @@ type AlertWindow struct {
 // ComputeAlertWindows aggregates usage into buckets and returns contiguous windows
 // where the cost exceeded configured thresholds. This is the shared implementation
 // used by both the API and the worker (sendAlerts).
-func ComputeAlertWindows(ctx context.Context, ch *clickstore.Client, ruleStore *cwsync.Store, start, end time.Time, interval int) ([]AlertWindow, error) {
+func ComputeAlertWindows(ctx context.Context, ch *clickstore.Client, db *sqlstore.Store, start, end time.Time, interval int) ([]AlertWindow, error) {
 	// Load thresholds
-	rules, err := ruleStore.GetAlertRules(ctx)
+	rules, err := db.GetAlertRules(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetAlertRules: %w", err)
 	}

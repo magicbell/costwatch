@@ -1,18 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 
-	"github.com/ardanlabs/conf/v3"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/costwatchai/costwatch/apps/api"
 	"github.com/costwatchai/costwatch/internal/appconfig"
+	"github.com/costwatchai/costwatch/internal/clickstore"
 	"github.com/costwatchai/costwatch/internal/costwatch"
+	costwatchapi "github.com/costwatchai/costwatch/internal/costwatch/api"
+	"github.com/costwatchai/costwatch/internal/health"
+	"github.com/costwatchai/costwatch/internal/monolith"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch/metric"
-	"github.com/magicbell/magicbell/src/gofoundation/logger"
+	"github.com/costwatchai/costwatch/internal/spec"
 )
 
 const desc = "CostWatch - copyright MagicBell, Inc."
@@ -24,47 +27,48 @@ func main() {
 		os.Exit(1)
 	}
 
-	log, err := logger.New("costwatch.api", env)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 
 	if err := run(log, env); err != nil {
-		log.Error("run", "err", err)
+		log.Error("Failed to run CostWatch Worker", "error", err.Error())
 		os.Exit(1)
 	}
 }
 
 func run(log *slog.Logger, env string) error {
+	ctx := context.Background()
 	cfg, err := appconfig.Init(env, desc)
 	if err != nil {
 		panic(fmt.Errorf("appconfig.Init: %w", err))
 	}
 
-	out, err := conf.String(&cfg)
-	if err != nil {
-		return fmt.Errorf("generating config for output: %w", err)
-	}
-	log.Debug("startup", "config", out)
-
 	// Register services/metrics for pricing-only usage (no AWS calls needed here).
 	svc := cloudwatch.NewService(aws.Config{})
 	ib := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), nil)
 	svc.NewMetric(ib)
-	costwatch.RegisterGlobalService(svc)
+	costwatch.RegisterService(svc)
 
-	// Monolith
-	mono := api.NewMonolith(log, cfg)
-
-	// ===========================================================================
-	// Run
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "4000"
+	cs, err := clickstore.NewClient(ctx, log, cfg.Clickhouse)
+	if err != nil {
+		return fmt.Errorf("clickstore.NewClient: %w", err)
 	}
 
-	if err := mono.Run(port); err != nil {
+	cw, err := costwatchapi.New(ctx, log, cs)
+	if err != nil {
+		return fmt.Errorf("costwatch.New: %w", err)
+	}
+
+	// Server
+	srv := monolith.NewServer(log, monolith.ServerOptions{
+		VersionPrefix: "v1",
+		EnableCORS:    true,
+		LambdaAware:   true,
+		DefaultPort:   "4000",
+	}, health.SetupRoutes, spec.SetupRoutes, cw.SetupRoutes)
+
+	if err := srv.Run(); err != nil {
 		return fmt.Errorf("failed to run server: %w", err)
 	}
 

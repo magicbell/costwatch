@@ -1,4 +1,4 @@
-package handler
+package spec
 
 import (
 	"context"
@@ -12,33 +12,24 @@ import (
 	"github.com/swaggest/openapi-go/openapi31"
 )
 
-type SpecFile struct {
-	api *mason.API
-}
+// SetupRoutes registers the GET /openapi.json endpoint on the provided mason API.
+func SetupRoutes(api *mason.API) {
+	api.Handle(http.MethodGet, "/openapi.json", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		sg, err := openapi.NewGenerator(api)
+		if err != nil {
+			return fmt.Errorf("openapi.NewGenerator: %w", err)
+		}
+		addSpecInfo(sg)
 
-func NewSpecFile(api *mason.API) *SpecFile {
-	return &SpecFile{api: api}
-}
+		sch, err := sg.Schema()
+		if err != nil {
+			return fmt.Errorf("sg.Schema: %w", err)
+		}
 
-func (h *SpecFile) SetupRoutes() {
-	h.api.Handle(http.MethodGet, "/openapi.json", h.handle)
-}
-
-func (h *SpecFile) handle(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	sg, err := openapi.NewGenerator(h.api)
-	if err != nil {
-		return fmt.Errorf("openapi.NewGenerator: %w", err)
-	}
-	addSpecInfo(sg)
-
-	sch, err := sg.Schema()
-	if err != nil {
-		return fmt.Errorf("sg.Schema: %w", err)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	web.FileResponse(ctx, w, sch, http.StatusOK)
-	return nil
+		w.Header().Set("Content-Type", "application/json")
+		web.FileResponse(ctx, w, sch, http.StatusOK)
+		return nil
+	})
 }
 
 func addSpecInfo(gen *openapi.Generator) {

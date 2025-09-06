@@ -11,52 +11,68 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscloudwatch "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	"github.com/costwatchai/costwatch/internal/appconfig"
 	"github.com/costwatchai/costwatch/internal/clickstore"
 	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/costwatchai/costwatch/internal/health"
+	"github.com/costwatchai/costwatch/internal/monolith"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch/metric"
 	"github.com/costwatchai/costwatch/internal/scheduler"
 )
 
-func main() {
-	lh := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	})
-	log := slog.New(lh)
+const desc = "CostWatch - copyright MagicBell, Inc."
 
-	if err := run(context.Background(), log); err != nil {
-		log.Error("Failed to run CostWatch", "error", err.Error())
+func main() {
+	env, ok := os.LookupEnv("APP_ENV")
+	if !ok {
+		fmt.Println("APP_ENV not set")
+		os.Exit(1)
+	}
+
+	log := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
+
+	if err := run(log, env); err != nil {
+		log.Error("Failed to run CostWatch Worker", "error", err.Error())
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, log *slog.Logger) error {
+func run(log *slog.Logger, env string) error {
+	ctx := context.Background()
+	cfg, err := appconfig.Init(env, desc)
+
 	log.Info("Starting CostWatch...")
-	fmt.Println("CostWatch started")
 
 	// SetLastSync up cancellable context with OS signals for graceful shutdown.
 	ctx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// ===========================================================================
-	// Clickhouse Connection
-	cfg := clickstore.Config{
-		Host:     "localhost",
-		Port:     9000,
-		Username: "default",
-		Password: "password",
-		Database: "costwatch",
-	}
+	// Server: run in background to avoid blocking the scheduler
+	srv := monolith.NewServer(log, monolith.ServerOptions{
+		VersionPrefix: "v1",
+		EnableCORS:    false,
+		LambdaAware:   true,
+		DefaultPort:   "4001",
+	}, health.SetupRoutes)
 
-	c, err := clickstore.NewClient(ctx, log, cfg)
+	go func() {
+		if err := srv.Run(); err != nil {
+			log.Error("worker server exited", "error", err)
+		}
+	}()
+
+	cs, err := clickstore.NewClient(ctx, log, cfg.Clickhouse)
 	if err != nil {
 		return fmt.Errorf("clickstore.NewClient: %w", err)
 	}
-	defer c.Close()
+	defer cs.Close()
 
 	// ===========================================================================
 	// CostWatch
-	wtc, err := costwatch.New(ctx, log, c)
+	cw, err := costwatch.New(ctx, log, cs)
 	if err != nil {
 		return fmt.Errorf("costwatch.New: %w", err)
 	}
@@ -71,23 +87,20 @@ func run(ctx context.Context, log *slog.Logger) error {
 	}
 
 	svc := cloudwatch.NewService(awsCfg)
-	wtc.RegisterService(svc)
+	costwatch.RegisterService(svc)
 
-	ibMtr := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), awscloudwatch.NewFromConfig(awsCfg))
-	svc.NewMetric(ibMtr)
-
-	// Also expose this service/metric for pricing lookups globally.
-	costwatch.RegisterGlobalService(svc)
+	ib := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), awscloudwatch.NewFromConfig(awsCfg))
+	svc.NewMetric(ib)
 
 	// Leading sync at startup
-	if err := wtc.Sync(ctx); err != nil {
+	if err := cw.Sync(ctx); err != nil {
 		log.Error("leading sync failed", "error", err)
 	}
 
 	// Scheduler: run every 30s with CostWatch.Sync
 	interval := time.Second * 30
 	tickLog := log.WithGroup("scheduler")
-	lt := scheduler.NewLocalTicker(tickLog, interval, wtc.Sync)
+	lt := scheduler.NewLocalTicker(tickLog, interval, cw.Sync)
 	lt.Start(ctx)
 	defer lt.Stop()
 
