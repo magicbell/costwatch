@@ -133,7 +133,7 @@ func (s *AlertService) SendAlerts(ctx context.Context) error {
 	}
 	now := time.Now().UTC()
 	start := now.Add(-48 * time.Hour)
-	end := now.Truncate(time.Hour)
+	end := now // use precise now to allow detecting ongoing windows in the current bucket
 	bucket := time.Hour
 
 	wins, err := s.ComputeWindows(ctx, start, end, bucket)
@@ -144,6 +144,7 @@ func (s *AlertService) SendAlerts(ctx context.Context) error {
 		return nil
 	}
 	recentCutoff := now.Add(-2 * time.Hour)
+	lastBucketStart := now.Truncate(bucket)
 	for _, w := range wins {
 		if !w.End.After(recentCutoff) {
 			continue
@@ -159,7 +160,13 @@ func (s *AlertService) SendAlerts(ctx context.Context) error {
 			}
 		}
 		expected := w.Threshold * float64(w.Hours)
-		text := fmt.Sprintf("[CostWatch] Alert: %s/%s exceeded threshold for %dh (expected $%.2f, actual $%.2f) from %s to %s UTC", w.Service, w.Metric, w.Hours, expected, w.RealCost, w.Start.Format(time.RFC3339), w.End.Format(time.RFC3339))
+		ongoing := w.End.After(lastBucketStart)
+		var text string
+		if ongoing {
+			text = fmt.Sprintf("[CostWatch] Alert: %s/%s exceeded threshold for %dh (expected $%.2f, actual $%.2f) since %s UTC (ongoing)", w.Service, w.Metric, w.Hours, expected, w.RealCost, w.Start.Format(time.RFC3339))
+		} else {
+			text = fmt.Sprintf("[CostWatch] Alert: %s/%s exceeded threshold for %dh (expected $%.2f, actual $%.2f) from %s to %s UTC", w.Service, w.Metric, w.Hours, expected, w.RealCost, w.Start.Format(time.RFC3339), w.End.Format(time.RFC3339))
+		}
 		if err := s.Notify.Send(ctx, text); err != nil {
 			continue
 		}
