@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/costwatchai/costwatch/internal/costwatch/port"
 	"github.com/magicbell/mason/model"
 )
 
@@ -33,42 +33,32 @@ type UpdateAlertThresholdRequest struct {
 	Threshold float64 `json:"threshold"`
 }
 
-// UpdateAlertRule upserts a threshold in sqlite keyed by service+metric.
+// UpdateAlertRule upserts a threshold keyed by service+metric.
 func (a *API) UpdateAlertRule(ctx context.Context, _ *http.Request, ent *AlertRule, _ model.Nil) (res *AlertRule, err error) {
-	if err := a.db.SetAlertThreshold(ctx, ent.Service, ent.Metric, ent.Threshold); err != nil {
-		return nil, fmt.Errorf("db.SetAlertThreshold: %w", err)
+	if err := a.alerts.Alerts.UpsertRule(ctx, port.AlertRule{Service: ent.Service, Metric: ent.Metric, Threshold: ent.Threshold}); err != nil {
+		return nil, fmt.Errorf("rules.Upsert: %w", err)
 	}
-
 	return ent, nil
 }
 
 func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res *ListResult[AlertRule], err error) {
-	recs, err := a.db.GetAlertRules(ctx)
+	recs, err := a.alerts.Alerts.ListRules(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetAlertRules: %w", err)
+		return nil, fmt.Errorf("rules.List: %w", err)
 	}
-
 	items := make([]AlertRule, 0, len(recs))
 	for _, rec := range recs {
-		items = append(items, AlertRule{
-			Service:   rec.Service,
-			Metric:    rec.Metric,
-			Threshold: rec.Threshold,
-		})
+		items = append(items, AlertRule{Service: rec.Service, Metric: rec.Metric, Threshold: rec.Threshold})
 	}
-
-	res = &ListResult[AlertRule]{
-		Items: items,
-	}
+	res = &ListResult[AlertRule]{Items: items}
 	return res, nil
 }
 
 func (a *API) computeAlertWindows(ctx context.Context, start, end time.Time, interval int) ([]AlertWindow, error) {
-	wins, err := costwatch.ComputeAlertWindows(ctx, a.store, a.db, start, end, interval)
+	wins, err := a.alerts.ComputeWindows(ctx, start, end, time.Duration(interval)*time.Second)
 	if err != nil {
 		return nil, err
 	}
-	// Map shared windows to API model with ExpectedCost/RealCost
 	res := make([]AlertWindow, 0, len(wins))
 	for _, w := range wins {
 		res = append(res, AlertWindow{

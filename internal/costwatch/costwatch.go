@@ -1,16 +1,16 @@
 package costwatch
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
-	"os"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
+	appsvc "github.com/costwatchai/costwatch/internal/costwatch/app"
+	chinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/clickhouse"
+	notinfr "github.com/costwatchai/costwatch/internal/costwatch/infra/notifier"
+	sqlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/sqlite"
 	"github.com/costwatchai/costwatch/internal/sqlstore"
 )
 
@@ -45,6 +45,13 @@ func New(ctx context.Context, log *slog.Logger, cs *clickstore.Client) (*CostWat
 		log: log,
 		cs:  cs,
 	}, nil
+}
+
+// registryCatalog implements MetricCatalog using the global registry in this package.
+type registryCatalog struct{}
+
+func (registryCatalog) ComputeCost(service, metric string, units float64) (float64, bool) {
+	return ComputeCost(service, metric, units)
 }
 
 // getSyncStore returns a lazily-initialized sync-state store.
@@ -226,90 +233,18 @@ func (cw *CostWatch) ServiceUsage(ctx context.Context, svc Service, start time.T
 	return usg, nil
 }
 
-// sendAlerts computes alert windows and posts notifications to WEBHOOK_URL, with dedupe via sqlite.
+// sendAlerts uses the AlertService with ports/adapters to compute windows and send notifications.
 func (cw *CostWatch) sendAlerts(ctx context.Context) error {
-	webhook := os.Getenv("WEBHOOK_URL")
-	if webhook == "" {
-		cw.log.Info("alerts: WEBHOOK_URL not set; alerting disabled")
-		return nil
-	}
-	// Compute windows over a broader lookback but filter to only recent windows for alerting.
-	now := time.Now().UTC()
-	start := now.Add(-48 * time.Hour)
-	end := now.Truncate(time.Hour) // align to hour boundaries to match bucketing
-	interval := 3600
-	cw.log.Debug("alerts: evaluating windows", "start", start, "end", end, "interval", interval)
-
 	st, err := cw.getSyncStore()
 	if err != nil {
 		return err
 	}
-	if rules, err := st.GetAlertRules(ctx); err == nil {
-		if len(rules) == 0 {
-			cw.log.Info("alerts: no alert rules configured; skipping")
-			return nil
-		}
-	}
 
-	wins, err := ComputeAlertWindows(ctx, cw.cs, st, start, end, interval)
-	if err != nil {
-		return err
-	}
-	// Only consider windows that ended recently (within the past 2 hours)
-	recentCutoff := now.Add(-2 * time.Hour)
-	filtered := wins[:0]
-	for _, w := range wins {
-		if w.End.After(recentCutoff) {
-			filtered = append(filtered, w)
-		}
-	}
-	wins = filtered
-	if len(wins) == 0 {
-		cw.log.Info("alerts: no windows above thresholds in recent period")
-		return nil
-	}
-	cw.log.Info("alerts: windows found", "count", len(wins))
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	var skipped, posted int
-	for _, w := range wins {
-		last, ok, err := st.GetLastNotified(ctx, w.Service, w.Metric)
-		if err != nil {
-			cw.log.Error("alerts: GetLastNotified error", "service", w.Service, "metric", w.Metric, "error", err)
-			continue
-		}
-		if ok && now.Sub(last) < time.Hour {
-			cw.log.Debug("alerts: skip due to recent alert", "service", w.Service, "metric", w.Metric, "last_sent", last)
-			skipped++
-			continue
-		}
-		expected := w.Threshold * float64(w.Hours)
-		text := fmt.Sprintf("[CostWatch] Alert: %s/%s exceeded threshold for %dh (expected $%.2f, actual $%.2f) from %s to %s UTC", w.Service, w.Metric, w.Hours, expected, w.RealCost, w.Start.Format(time.RFC3339), w.End.Format(time.RFC3339))
-		payload := map[string]string{"text": text}
-		buf, _ := json.Marshal(payload)
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, webhook, bytes.NewReader(buf))
-		if err != nil {
-			cw.log.Error("alerts: build webhook request failed", "error", err)
-			continue
-		}
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := client.Do(req)
-		if err != nil {
-			cw.log.Error("alerts: webhook post failed", "service", w.Service, "metric", w.Metric, "error", err)
-			continue
-		}
-		_ = resp.Body.Close()
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			cw.log.Error("alerts: webhook non-2xx", "service", w.Service, "metric", w.Metric, "status", resp.Status)
-			continue
-		}
-		if err := st.SetLastNotified(ctx, w.Service, w.Metric, now); err != nil {
-			cw.log.Error("alerts: failed to persist last_sent", "service", w.Service, "metric", w.Metric, "error", err)
-			continue
-		}
-		posted++
-		cw.log.Info("alerts: posted", "service", w.Service, "metric", w.Metric, "hours", w.Hours, "expected", expected, "actual", w.RealCost)
-	}
-	cw.log.Info("alerts: summary", "windows", len(wins), "posted", posted, "skipped_recent", skipped)
-	return nil
+	// Wire ports
+	m := chinfra.NewMetricsRepo(cw.cs)
+	a := sqlinfra.NewAlertsRepos(st)
+	n := notinfr.NewWebhookNotifierFromEnv()
+	c := registryCatalog{}
+	alerts := appsvc.NewAlertService(m, a, n, c)
+	return alerts.SendAlerts(ctx)
 }

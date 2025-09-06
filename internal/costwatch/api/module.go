@@ -5,27 +5,41 @@ import (
 	"log/slog"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
+	appsvc "github.com/costwatchai/costwatch/internal/costwatch/app"
+	ctlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/catalog"
+	chinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/clickhouse"
+	sqlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/sqlite"
 	"github.com/costwatchai/costwatch/internal/sqlstore"
 	"github.com/magicbell/mason"
 )
 
 // API wires ClickHouse and CostWatch and exposes HTTP routes.
 type API struct {
-	log   *slog.Logger
-	store *clickstore.Client
-	db    *sqlstore.Store
+	log    *slog.Logger
+	alerts *appsvc.AlertService
+	usage  *appsvc.UsageService
 }
 
 // New constructs the API with a pre-initialized ClickHouse client.
 func New(_ context.Context, log *slog.Logger, store *clickstore.Client) (*API, error) {
-	alerts, _ := sqlstore.Open()
+	alertsDB, _ := sqlstore.Open()
+	m := chinfra.NewMetricsRepo(store)
+	a := sqlinfra.NewAlertsRepos(alertsDB)
+	c := ctlinfra.GlobalRegistryCatalog{}
+	var n nilNotifier // API does not send alerts
+	alerts := appsvc.NewAlertService(m, a, n, c)
+	usage := appsvc.NewUsageService(m, c)
 
 	return &API{
-		log:   log,
-		store: store,
-		db:    alerts,
+		log:    log,
+		alerts: alerts,
+		usage:  usage,
 	}, nil
 }
+
+type nilNotifier struct{}
+
+func (nilNotifier) Send(ctx context.Context, text string) error { return nil }
 
 // SetupRoutes registers HTTP routes on the provided Mason API.
 func (a *API) SetupRoutes(api *mason.API) {
