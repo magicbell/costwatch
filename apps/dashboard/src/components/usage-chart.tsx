@@ -1,4 +1,5 @@
 import { Chart, useChart } from '@chakra-ui/charts';
+import { Text, VStack } from '@chakra-ui/react';
 import React from 'react';
 import {
   Bar,
@@ -26,7 +27,7 @@ export type UsageChartProps = {
 function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageChartProps) {
   const chartData = React.useMemo(
     () =>
-      data.items.map((x) => {
+      (data.items || []).map((x) => {
         return {
           [`${x.service} / ${x.metric}`]: x.cost,
           ts: new Date(x.timestamp).getTime(),
@@ -37,7 +38,7 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
 
   const series = React.useMemo(
     () =>
-      Array.from(new Set(data.items.map((x) => `${x.service} / ${x.metric}`))).map((x) => ({
+      Array.from(new Set((data.items || []).map((x) => `${x.service} / ${x.metric}`))).map((x) => ({
         name: x,
         color: 'purple.solid',
       })),
@@ -48,7 +49,10 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
 
   const alertAreas = React.useMemo(() => {
     if (!alertWindows || alertWindows.items.length === 0) return [] as { x1: number; x2: number }[];
-    const domainMax = Math.max(...chart.data.map((x) => x[chart.key('ts')]));
+    const tsKey = chart.key('ts');
+    const tsVals = chart.data.map((x) => x[tsKey]).filter((v) => typeof v === 'number' && isFinite(v));
+    const now = Date.now();
+    const domainMax = tsVals.length > 0 ? Math.max(...tsVals) : now;
     return alertWindows.items.map((w) => ({
       x1: new Date(w.start).getTime(),
       x2: w.end ? new Date(w.end).getTime() : domainMax,
@@ -83,10 +87,24 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
   const tooltipValueFormatter = React.useCallback((value: number) => formatCurrency(value), []);
 
   const domain = React.useMemo(() => {
-    const min = Math.min(...chart.data.map((x) => x[chart.key('ts')]));
-    const max = Math.max(...chart.data.map((x) => x[chart.key('ts')]));
-    return [min, max];
+    const tsKey = chart.key('ts');
+    const tsVals = chart.data.map((x) => x[tsKey]).filter((v) => typeof v === 'number' && isFinite(v));
+    if (tsVals.length === 0) {
+      const now = Date.now();
+      return [now - 1, now] as [number, number];
+    }
+    const min = Math.min(...tsVals);
+    const max = Math.max(...tsVals);
+    return [min, max] as [number, number];
   }, [chart.data, chart.key('ts')]);
+
+  if (!data.items || data.items.length === 0) {
+    return (
+      <VStack align="center" justify="center" minH={300} color="fg.muted">
+        <Text>No usage data available for the selected period.</Text>
+      </VStack>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={300}>

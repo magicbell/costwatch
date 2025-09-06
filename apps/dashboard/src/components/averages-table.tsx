@@ -31,10 +31,10 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
         <Table.Row>
           <Table.ColumnHeader>Service</Table.ColumnHeader>
           <Table.ColumnHeader>Metric</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">P50</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">P90</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">P95</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right" pr={8}>
+          <Table.ColumnHeader textAlign="end">P50</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">P90</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">P95</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end" pr={8}>
             Max
           </Table.ColumnHeader>
           <Table.ColumnHeader textAlign="left" w={32}>
@@ -55,17 +55,20 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
             <Table.Row key={idx}>
               <Table.Cell>{r.service}</Table.Cell>
               <Table.Cell>{r.metric}</Table.Cell>
-              <Table.Cell textAlign="right">{formatCurrency(r.p50)}</Table.Cell>
-              <Table.Cell textAlign="right">{formatCurrency(r.p90)}</Table.Cell>
-              <Table.Cell textAlign="right">{formatCurrency(r.p95)}</Table.Cell>
-              <Table.Cell textAlign="right" pr={8}>
+              <Table.Cell textAlign="end">{formatCurrency(r.p50)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatCurrency(r.p90)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatCurrency(r.p95)}</Table.Cell>
+              <Table.Cell textAlign="end" pr={8}>
                 {formatCurrency(r.pmax)}
               </Table.Cell>
-              <Table.Cell textAlign="right" py={0} w={32}>
+              <Table.Cell textAlign="end" py={0} w={32}>
                 <Input
                   size="sm"
                   variant="flushed"
                   border={0}
+                  type="number"
+                  step="0.01"
+                  textAlign="end"
                   placeholder={formatNumber(r.p95, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   defaultValue={defaultValue}
                   onBlur={(e) => {

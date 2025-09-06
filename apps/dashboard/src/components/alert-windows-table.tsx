@@ -57,9 +57,9 @@ function AlertWindowsTableComponent({ data, onHover }: AlertWindowsTableProps) {
           <Table.ColumnHeader>Start</Table.ColumnHeader>
           <Table.ColumnHeader>End</Table.ColumnHeader>
           <Table.ColumnHeader>Duration</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">Expected</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">Real</Table.ColumnHeader>
-          <Table.ColumnHeader textAlign="right">Diff</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">Expected</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">Real</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="end">Diff</Table.ColumnHeader>
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -83,9 +83,9 @@ function AlertWindowsTableComponent({ data, onHover }: AlertWindowsTableProps) {
               <Table.Cell>{formatDateTime(r.start)}</Table.Cell>
               <Table.Cell>{ongoing ? 'ongoing' : formatDateTime(r.end!)}</Table.Cell>
               <Table.Cell>{formatDuration(r.start, effectiveEndISO)}</Table.Cell>
-              <Table.Cell textAlign="right">{formatCurrency(r.expected_cost)}</Table.Cell>
-              <Table.Cell textAlign="right">{formatCurrency(r.real_cost)}</Table.Cell>
-              <Table.Cell textAlign="right">
+              <Table.Cell textAlign="end">{formatCurrency(r.expected_cost)}</Table.Cell>
+              <Table.Cell textAlign="end">{formatCurrency(r.real_cost)}</Table.Cell>
+              <Table.Cell textAlign="end">
                 {formatCurrency(diff)} {` ( ${formatNumber(pct, { maximumFractionDigits: 0 })}% )`}
               </Table.Cell>
             </Table.Row>
