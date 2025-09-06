@@ -18,6 +18,38 @@ import type { UsageResponse } from '@/lib/api/usage';
 
 import { formatCurrency, formatDate, formatDateTime } from '../lib/format';
 
+const TimeAxis = React.memo(
+  function TimeAxis(props: { domain: [number, number]; tickCount: number }) {
+    const { domain } = props;
+
+    const tickFormatter = (value: number, idx: number) => {
+      const d = new Date(value);
+      const h = d.getUTCHours();
+      const m = d.getUTCMinutes();
+      if (idx === 0 || idx === props.tickCount - 1) return '';
+      if (h === 0 && m === 0) {
+        return formatDate(d);
+      }
+
+      return '';
+    };
+
+    return (
+      <XAxis
+        axisLine={false}
+        tickLine={false}
+        type="number"
+        dataKey="ts"
+        domain={domain}
+        scale="time"
+        interval={0}
+        tickFormatter={tickFormatter}
+      />
+    );
+  },
+  (prev, next) => prev.domain[0] === next.domain[0] && prev.domain[1] === next.domain[1],
+);
+
 export type UsageChartProps = {
   data: UsageResponse;
   alertWindows?: AlertWindowsResponse;
@@ -59,20 +91,6 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
     }));
   }, [alertWindows, chart]);
 
-  const xTickFormatter = React.useCallback(
-    (value: number, idx: number) => {
-      const d = new Date(value);
-      const h = d.getUTCHours();
-      const m = d.getUTCMinutes();
-      if (idx === 0 || idx === chartData.length - 1) return '';
-      if (h === 0 && m === 0) {
-        return formatDate(d);
-      }
-      return '';
-    },
-    [chartData.length],
-  );
-
   const yTickCount = 5;
   const yTickFormatter = React.useCallback((v: number, idx: number) => {
     if (idx === 0 || idx === yTickCount - 1) return '';
@@ -111,16 +129,9 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
       <Chart.Root maxH="sm" chart={chart}>
         <BarChart data={chart.data} barCategoryGap={1}>
           <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
-          <XAxis
-            axisLine={false}
-            tickLine={false}
-            type="number"
-            dataKey={chart.key('ts')}
-            domain={domain}
-            scale="time"
-            interval={0}
-            tickFormatter={xTickFormatter}
-          />
+
+          <TimeAxis domain={domain} tickCount={chartData.length} />
+
           <YAxis
             axisLine={false}
             tickLine={false}
