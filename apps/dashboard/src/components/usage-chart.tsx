@@ -32,7 +32,7 @@ export type AlertWindowItem = {
   service: string;
   metric: string;
   start: string;
-  end: string;
+  end: string | null;
   expected_cost: number;
   real_cost: number;
 };
@@ -75,8 +75,12 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
 
   const alertAreas = React.useMemo(() => {
     if (!alertWindows || alertWindows.items.length === 0) return [] as { x1: number; x2: number }[];
-    return alertWindows.items.map((w) => ({ x1: new Date(w.start).getTime(), x2: new Date(w.end).getTime() }));
-  }, [alertWindows]);
+    const domainMax = Math.max(...chart.data.map((x) => x[chart.key('ts')]));
+    return alertWindows.items.map((w) => ({
+      x1: new Date(w.start).getTime(),
+      x2: w.end ? new Date(w.end).getTime() : domainMax,
+    }));
+  }, [alertWindows, chart]);
 
   const xTickFormatter = React.useCallback(
     (value: number, idx: number) => {

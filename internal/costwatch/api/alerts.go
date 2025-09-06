@@ -61,11 +61,22 @@ func (a *API) computeAlertWindows(ctx context.Context, start, end time.Time, int
 	}
 	res := make([]AlertWindow, 0, len(wins))
 	for _, w := range wins {
+		// If this window ends in the last bucket, expose end as null to indicate an ongoing anomaly.
+		// Determine last bucket start by truncating the API query end to the interval duration.
+		var endPtr *time.Time
+		bucket := time.Duration(interval) * time.Second
+		lastBucketStart := end.Truncate(bucket)
+		if w.End.After(lastBucketStart) {
+			endPtr = nil
+		} else {
+			endCopy := w.End // create a copy to take address safely
+			endPtr = &endCopy
+		}
 		res = append(res, AlertWindow{
 			Service:      w.Service,
 			Metric:       w.Metric,
 			Start:        w.Start,
-			End:          w.End,
+			End:          endPtr,
 			ExpectedCost: w.Threshold * float64(w.Hours),
 			RealCost:     w.RealCost,
 		})

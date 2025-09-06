@@ -29,12 +29,12 @@ type UsageRecord struct {
 // Diff is RealCost - ExpectedCost. DiffPercent is 100 * Diff / ExpectedCost
 // when ExpectedCost > 0, otherwise 0.
 type AlertWindow struct {
-	Service      string    `json:"service"`
-	Metric       string    `json:"metric"`
-	Start        time.Time `json:"start"`
-	End          time.Time `json:"end"`
-	ExpectedCost float64   `json:"expected_cost"`
-	RealCost     float64   `json:"real_cost"`
+	Service      string     `json:"service"`
+	Metric       string     `json:"metric"`
+	Start        time.Time  `json:"start"`
+	End          *time.Time `json:"end"`
+	ExpectedCost float64    `json:"expected_cost"`
+	RealCost     float64    `json:"real_cost"`
 }
 
 type PercentileRecord struct {

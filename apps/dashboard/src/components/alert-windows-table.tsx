@@ -7,7 +7,7 @@ export type AlertWindowItem = {
   service: string;
   metric: string;
   start: string; // ISO date
-  end: string; // ISO date
+  end: string | null; // ISO date or null if ongoing
   expected_cost: number;
   real_cost: number;
 };
@@ -67,18 +67,22 @@ function AlertWindowsTableComponent({ data, onHover }: AlertWindowsTableProps) {
           const diff = r.real_cost - r.expected_cost;
           const pct = r.expected_cost > 0 ? (diff / r.expected_cost) * 100 : 0;
           const startNum = new Date(r.start).getTime();
-          const endNum = new Date(r.end).getTime();
+          const fallbackEndISO = data.to_date;
+          const effectiveEndISO = r.end ?? fallbackEndISO;
+          const endNum = new Date(effectiveEndISO).getTime();
+          const ongoing = r.end == null;
           return (
             <Table.Row
               key={idx}
+              bg={ongoing ? 'bg.error' : undefined}
               onMouseEnter={() => onHover?.({ start: startNum, end: endNum })}
               onMouseLeave={() => onHover?.(null)}
             >
               <Table.Cell>{r.service}</Table.Cell>
               <Table.Cell>{r.metric}</Table.Cell>
               <Table.Cell>{formatDateTime(r.start)}</Table.Cell>
-              <Table.Cell>{formatDateTime(r.end)}</Table.Cell>
-              <Table.Cell>{formatDuration(r.start, r.end)}</Table.Cell>
+              <Table.Cell>{ongoing ? 'ongoing' : formatDateTime(r.end!)}</Table.Cell>
+              <Table.Cell>{formatDuration(r.start, effectiveEndISO)}</Table.Cell>
               <Table.Cell textAlign="right">{formatCurrency(r.expected_cost)}</Table.Cell>
               <Table.Cell textAlign="right">{formatCurrency(r.real_cost)}</Table.Cell>
               <Table.Cell textAlign="right">
