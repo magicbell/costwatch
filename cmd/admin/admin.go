@@ -88,9 +88,6 @@ func printOpenAPISpec(ctx context.Context, log *slog.Logger) error {
 	}
 	cw.SetupRoutes(srv.API)
 
-	// Optionally, we could register health and spec routes, but the generator
-	// works solely from the registered API operations.
-
 	// Generate and print the OpenAPI document
 	data, err := spec.Generate(srv.API)
 	if err != nil {
