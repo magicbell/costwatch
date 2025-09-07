@@ -2,25 +2,10 @@ import { Table } from "@chakra-ui/react";
 import React from "react";
 
 import { formatCurrency, formatDateTime, formatNumber } from "../lib/format";
-
-export type AlertWindowItem = {
-	service: string;
-	metric: string;
-	start: string; // ISO date
-	end: string | null; // ISO date or null if ongoing
-	expected_cost: number;
-	real_cost: number;
-};
-
-export type AlertWindowsResponse = {
-	from_date: string;
-	to_date: string;
-	interval: number; // seconds
-	items: AlertWindowItem[];
-};
+import type { AlertWindowsQueryResponse } from '../lib/api/client';
 
 export type AlertWindowsTableProps = {
-	data: AlertWindowsResponse;
+	data: AlertWindowsQueryResponse;
 	onHover?: (range: { start: number; end: number } | null) => void;
 };
 
