@@ -2,6 +2,8 @@
 
 CostWatch pulls usage metrics (e.g., from AWS CloudWatch), stores them in ClickHouse, and exposes an API and dashboard for cost analysis and projections.
 
+![screenshot.png](docs/screenshot.png)
+
 ## Quick start (Docker)
 
 Prerequisite: Docker Desktop (or Docker Engine) installed and running.
