@@ -73,8 +73,11 @@ func TestCostwatch(t *testing.T) {
 	c, err = clickstore.NewClient(ctx, log, cfg)
 	assert.NilError(t, err)
 
-	defer c.Exec(ctx, "DROP DATABASE IF EXISTS %s", dbName)
-
+	defer func() {
+		if err := c.Exec(ctx, "DROP DATABASE IF EXISTS %s", dbName); err != nil {
+			log.Error("failed to drop database", "error", err)
+		}
+	}()
 	// ===========================================================================
 	// Costwatch
 	wtc, err := costwatch.New(ctx, log, c)

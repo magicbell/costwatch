@@ -92,7 +92,10 @@ func (a *Server) NewRoute(method string, group string, path string, handler maso
 				// Return well-formatted validation errors
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnprocessableEntity)
-				json.NewEncoder(w).Encode(fe)
+				if err := json.NewEncoder(w).Encode(fe); err != nil {
+					a.log.Error("error encoding response", "error", err)
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				}
 				return
 			}
 

@@ -8,7 +8,10 @@ import (
 	"os"
 )
 
-type WebhookNotifier struct{ URL string; Client *http.Client }
+type WebhookNotifier struct {
+	URL    string
+	Client *http.Client
+}
 
 func NewWebhookNotifierFromEnv() *WebhookNotifier {
 	return &WebhookNotifier{URL: os.Getenv("WEBHOOK_URL"), Client: &http.Client{}}

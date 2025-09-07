@@ -43,6 +43,9 @@ func main() {
 func run(log *slog.Logger, env string) error {
 	ctx := context.Background()
 	cfg, err := appconfig.Init(env, desc)
+	if err != nil {
+		panic(fmt.Errorf("appconfig.Init: %w", err))
+	}
 
 	log.Info("Starting CostWatch...")
 

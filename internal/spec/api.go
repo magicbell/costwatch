@@ -21,7 +21,9 @@ func SetupRoutes(api *mason.API) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		web.FileResponse(ctx, w, sch, http.StatusOK)
+		if err := web.FileResponse(ctx, w, sch, http.StatusOK); err != nil {
+			return fmt.Errorf("failed to write file response: %w", err)
+		}
 		return nil
 	})
 }

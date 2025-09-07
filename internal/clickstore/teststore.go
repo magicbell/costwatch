@@ -1,4 +1,5 @@
 package clickstore
+
 import (
 	"context"
 	"log/slog"
@@ -11,21 +12,21 @@ var _ driver.Conn = (*TestStore)(nil)
 // emptyRows implements driver.Rows and represents an empty result set.
 type emptyRows struct{}
 
-func (e *emptyRows) Next() bool                     { return false }
-func (e *emptyRows) Scan(dest ...any) error         { return nil }
-func (e *emptyRows) ScanStruct(dest any) error      { return nil }
-func (e *emptyRows) Columns() []string              { return nil }
+func (e *emptyRows) Next() bool                       { return false }
+func (e *emptyRows) Scan(dest ...any) error           { return nil }
+func (e *emptyRows) ScanStruct(dest any) error        { return nil }
+func (e *emptyRows) Columns() []string                { return nil }
 func (e *emptyRows) ColumnTypes() []driver.ColumnType { return nil }
-func (e *emptyRows) Totals(dest ...any) error       { return nil }
-func (e *emptyRows) Err() error                     { return nil }
-func (e *emptyRows) Close() error                   { return nil }
+func (e *emptyRows) Totals(dest ...any) error         { return nil }
+func (e *emptyRows) Err() error                       { return nil }
+func (e *emptyRows) Close() error                     { return nil }
 
 // emptyRow implements driver.Row and represents an empty single-row result.
 type emptyRow struct{}
 
-func (e *emptyRow) Scan(dest ...any) error     { return nil }
-func (e *emptyRow) ScanStruct(dest any) error  { return nil }
-func (e *emptyRow) Err() error                 { return nil }
+func (e *emptyRow) Scan(dest ...any) error    { return nil }
+func (e *emptyRow) ScanStruct(dest any) error { return nil }
+func (e *emptyRow) Err() error                { return nil }
 
 // TestStore is a lightweight in-memory test connection that logs queries.
 type TestStore struct {
