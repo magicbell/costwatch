@@ -14,8 +14,9 @@ tasks:
 
   install:
     desc: Install dependencies
+    dir: apps/dashboard
     cmds:
-      - yarn --cwd ./apps/dashboard install --prefer-offline --no-progress --non-interactive --silent
+      - yarn install --prefer-offline --no-progress --non-interactive --silent
     sources:
       - package*.json
     generates:
@@ -23,19 +24,26 @@ tasks:
 
   run-api:
     desc: Run the go-api
+    env:
+      PORT: 3010
     cmds:
       - go tool gow run ./apps/api/cmd/main.go -e go,env
 
   run-worker:
     desc: Run the go-worker
+    env:
+      PORT: 3020
     cmds:
       - go tool gow run ./apps/worker/cmd/main.go -e go,env
 
   run-dashboard:
     desc: Run the go-dashboard
     deps: [install]
+    dir: apps/dashboard
+    env:
+      PORT: 3000
     cmds:
-      - yarn --cwd ./apps/dashboard dev
+      - yarn vite
 
   seed-clickhouse:
     desc: Seed ClickHouse

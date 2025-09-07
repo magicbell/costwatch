@@ -27,7 +27,7 @@ processes:
     namespace: apps
     working_dir: .
     command: go tool task run-worker
-    ready_log_line: 'dev server ready'
+    ready_log_line: 'listening on'
     is_tty: true
     availability:
       restart: always
@@ -41,7 +41,7 @@ processes:
       period_seconds: 60
       http_get:
         host: localhost
-        port: 3000
+        port: 3020
         path: /healthcheck
 
   api:
@@ -63,7 +63,7 @@ processes:
       period_seconds: 60
       http_get:
         host: localhost
-        port: 3000
+        port: 3010
         path: /v1/healthcheck
 
   dashboard:
