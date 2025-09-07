@@ -2,14 +2,13 @@ import { mutationOptions, type QueryClient } from '@tanstack/react-query';
 
 import { toaster } from '@/components/ui/toaster.tsx';
 import { formatCurrency } from '@/lib/format.ts';
-
-import { type AlertRule, updateAlertRule } from './alerts';
+import * as api from './client';
 
 export const alertRuleMutationOptions = (client: QueryClient) =>
   mutationOptions({
     mutationKey: ['update-alert-rule'],
-    mutationFn: async (payload: AlertRule) => {
-      await updateAlertRule(payload);
+    mutationFn: async (payload: api.AlertRule) => {
+      await api.updateAlertRule(payload);
       return payload;
     },
     onSuccess: (x) => {

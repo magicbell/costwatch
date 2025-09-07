@@ -4,11 +4,11 @@ import React from 'react';
 
 import { alertRuleMutationOptions } from '../lib/api/alerts-mutation-options';
 import { alertRulesQueryOptions } from '../lib/api/alerts-query-options';
-import type { PercentilesResponse } from '../lib/api/usage';
 import { formatCurrency, formatNumber } from '../lib/format';
+import type { UsagePercentilesResponse} from '../lib/api/client';
 
 export type AveragesTableProps = {
-  data: PercentilesResponse;
+  data: UsagePercentilesResponse;
 };
 
 function AveragesTableComponent({ data }: AveragesTableProps) {
@@ -43,7 +43,7 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
         </Table.Row>
       </Table.Header>
       <Table.Body>
-        {rows.map((r, idx) => {
+        {rows.map((r) => {
           const value = (query.data?.items || []).find(
             (x) => x.service === r.service && x.metric === r.metric,
           )?.threshold;
@@ -52,7 +52,7 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
             value != null ? formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : undefined;
 
           return (
-            <Table.Row key={idx}>
+            <Table.Row key={`${r.service}-${r.metric}`}>
               <Table.Cell>{r.service}</Table.Cell>
               <Table.Cell>{r.metric}</Table.Cell>
               <Table.Cell textAlign="end">{formatCurrency(r.p50)}</Table.Cell>

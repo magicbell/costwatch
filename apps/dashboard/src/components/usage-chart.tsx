@@ -13,8 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 
-import type { AlertWindowsResponse } from '@/lib/api/alerts';
-import type { UsageResponse } from '@/lib/api/usage';
+import type { AlertWindowsQueryResponse, UsageResponse } from '../lib/api/client';
 
 import { formatCurrency, formatDate, formatDateTime } from '../lib/format';
 
@@ -52,7 +51,7 @@ const TimeAxis = React.memo(
 
 export type UsageChartProps = {
   data: UsageResponse;
-  alertWindows?: AlertWindowsResponse;
+  alertWindows?: AlertWindowsQueryResponse;
   hoveredAlertWindow?: { start: number; end: number } | null;
 };
 
@@ -82,7 +81,7 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
   const alertAreas = React.useMemo(() => {
     if (!alertWindows || alertWindows.items.length === 0) return [] as { x1: number; x2: number }[];
     const tsKey = chart.key('ts');
-    const tsVals = chart.data.map((x) => x[tsKey]).filter((v) => typeof v === 'number' && isFinite(v));
+    const tsVals = chart.data.map((x) => x[tsKey]).filter((v) => typeof v === 'number' && Number.isFinite(v));
     const now = Date.now();
     const domainMax = tsVals.length > 0 ? Math.max(...tsVals) : now;
     return alertWindows.items.map((w) => ({
@@ -105,8 +104,7 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
   const tooltipValueFormatter = React.useCallback((value: number) => formatCurrency(value), []);
 
   const domain = React.useMemo(() => {
-    const tsKey = chart.key('ts');
-    const tsVals = chart.data.map((x) => x[tsKey]).filter((v) => typeof v === 'number' && isFinite(v));
+    const tsVals = chart.data.map((x) => x.ts).filter((v) => typeof v === 'number' && Number.isFinite(v));
     if (tsVals.length === 0) {
       const now = Date.now();
       return [now - 1, now] as [number, number];
@@ -114,7 +112,7 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
     const min = Math.min(...tsVals);
     const max = Math.max(...tsVals);
     return [min, max] as [number, number];
-  }, [chart.data, chart.key('ts')]);
+  }, [chart.data]);
 
   if (!data.items || data.items.length === 0) {
     return (
@@ -150,12 +148,12 @@ function UsageChartComponent({ data, alertWindows, hoveredAlertWindow }: UsageCh
           />
           <Legend content={<Chart.Legend />} />
 
-          {alertAreas.map((a, i) => {
+          {alertAreas.map((a) => {
             const isHovered =
               !!hoveredAlertWindow && a.x1 === hoveredAlertWindow.start && a.x2 === hoveredAlertWindow.end;
             return (
               <ReferenceArea
-                key={`alert-${i}`}
+                key={`alert-${a.x1}-${a.x2}-${isHovered}`}
                 ifOverflow="extendDomain"
                 x1={a.x1}
                 x2={a.x2}

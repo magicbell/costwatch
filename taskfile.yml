@@ -38,12 +38,22 @@ tasks:
 
   run-dashboard:
     desc: Run the go-dashboard
-    deps: [install]
+    deps: [install, gen-api-client]
     dir: apps/dashboard
     env:
       PORT: 3000
     cmds:
       - yarn vite
+
+  gen-api-client:
+    desc: Generate api client for the dashboard
+    deps: [install]
+    env:
+      API_URL: http://localhost:3010/v1
+    cmds:
+      - go run cmd/admin/admin.go openapi > openapi.json
+      - cd apps/dashboard && npx -y orval
+      - cd apps/dashboard && npx -y biome check --unsafe --write src/lib/api/client.ts
 
   seed-clickhouse:
     desc: Seed ClickHouse

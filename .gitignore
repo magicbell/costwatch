@@ -1,3 +1,4 @@
 .task
 .db/
 .env
+openapi.json
