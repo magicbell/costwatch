@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,23 +11,26 @@ import (
 	"github.com/magicbell/mason/model"
 )
 
-var _ model.Entity = (*QueryResult[UsageRecord])(nil)
+type UsageResponse QueryResult[UsageRecord]
 
-func (r *QueryResult[UsageRecord]) Example() []byte {
-	return []byte(`{}`)
-}
+var _ model.Entity = (*UsageResponse)(nil)
 
-func (r *QueryResult[UsageRecord]) Marshal() (json.RawMessage, error) { return json.Marshal(r) }
-func (r *QueryResult[UsageRecord]) Name() string                      { return "UsageResponse" }
-func (r *QueryResult[UsageRecord]) Schema() []byte {
-	return []byte(`{}`)
-}
-func (r *QueryResult[UsageRecord]) Unmarshal(data json.RawMessage) error {
+//go:embed schemas/usage_response.schema.json
+var usageResponseSchema []byte
+
+//go:embed schemas/usage_response.example.json
+var usageResponseExample []byte
+
+func (r *UsageResponse) Name() string                      { return "UsageResponse" }
+func (r *UsageResponse) Schema() []byte                    { return usageResponseSchema }
+func (r *UsageResponse) Example() []byte                   { return usageResponseExample }
+func (r *UsageResponse) Marshal() (json.RawMessage, error) { return json.Marshal(r) }
+func (r *UsageResponse) Unmarshal(data json.RawMessage) error {
 	return json.Unmarshal(data, r)
 }
 
 // Usage returns service usage + cost per interval for the past 28 days.
-func (a *API) Usage(ctx context.Context, _ *http.Request, _ model.Nil) (res *QueryResult[UsageRecord], err error) {
+func (a *API) Usage(ctx context.Context, _ *http.Request, _ model.Nil) (res *UsageResponse, err error) {
 	end := time.Now().UTC()
 	start := end.Add(-28 * 24 * time.Hour)
 	interval := 3600
@@ -41,7 +45,7 @@ func (a *API) Usage(ctx context.Context, _ *http.Request, _ model.Nil) (res *Que
 		items = append(items, UsageRecord{Service: it.Service, Metric: it.Metric, Cost: it.Cost, Timestamp: it.Timestamp})
 	}
 
-	res = &QueryResult[UsageRecord]{
+	res = &UsageResponse{
 		Items:    items,
 		FromDate: start,
 		ToDate:   end,
@@ -50,7 +54,27 @@ func (a *API) Usage(ctx context.Context, _ *http.Request, _ model.Nil) (res *Que
 	return res, nil
 }
 
-func (a *API) UsagePercentiles(ctx context.Context, _ *http.Request, _ model.Nil) (res *QueryResult[PercentileRecord], err error) {
+type UsagePercentilesResponse QueryResult[PercentileRecord]
+
+var _ model.Entity = (*UsagePercentilesResponse)(nil)
+
+//go:embed schemas/usage_percentiles_response.schema.json
+var usagePercentilesResponseSchema []byte
+
+//go:embed schemas/usage_percentiles_response.example.json
+var usagePercentilesResponseExample []byte
+
+func (r *UsagePercentilesResponse) Name() string { return "UsagePercentilesResponse" }
+func (r *UsagePercentilesResponse) Schema() []byte {
+	return usagePercentilesResponseSchema
+}
+func (r *UsagePercentilesResponse) Example() []byte                   { return usagePercentilesResponseExample }
+func (r *UsagePercentilesResponse) Marshal() (json.RawMessage, error) { return json.Marshal(r) }
+func (r *UsagePercentilesResponse) Unmarshal(data json.RawMessage) error {
+	return json.Unmarshal(data, r)
+}
+
+func (a *API) UsagePercentiles(ctx context.Context, _ *http.Request, _ model.Nil) (res *UsagePercentilesResponse, err error) {
 	end := time.Now().UTC()
 	start := end.Add(-7 * 24 * time.Hour)
 	interval := 3600
@@ -63,7 +87,7 @@ func (a *API) UsagePercentiles(ctx context.Context, _ *http.Request, _ model.Nil
 	for _, r := range recs {
 		items = append(items, PercentileRecord{Service: r.Service, Metric: r.Metric, P50: r.P50, P90: r.P90, P95: r.P95, PMax: r.PMax})
 	}
-	res = &QueryResult[PercentileRecord]{
+	res = &UsagePercentilesResponse{
 		Items:    items,
 		FromDate: start,
 		ToDate:   end,

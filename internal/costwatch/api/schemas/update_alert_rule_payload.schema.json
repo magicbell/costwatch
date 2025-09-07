@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "service": { "type": "string" },
+    "metric": { "type": "string" },
+    "threshold": { "type": "number" }
+  },
+  "required": ["service", "metric", "threshold"]
+}

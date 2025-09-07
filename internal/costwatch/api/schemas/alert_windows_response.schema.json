@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "from_date": { "type": "string" },
+    "to_date": { "type": "string" },
+    "interval": { "type": "number" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service": { "type": "string" },
+          "metric": { "type": "string" },
+          "start": { "type": "string" },
+          "end": { "type": ["string", "null"] },
+          "expected_cost": { "type": "number" },
+          "real_cost": { "type": "number" }
+        },
+        "additionalProperties": false,
+        "required": ["service", "metric", "start", "end", "expected_cost", "real_cost"]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["from_date", "to_date", "interval", "items"]
+}

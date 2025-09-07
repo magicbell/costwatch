@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "from_date": {
+      "type": "string"
+    },
+    "to_date": {
+      "type": "string"
+    },
+    "interval": {
+      "type": "number"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "p50": {
+            "type": "number"
+          },
+          "p90": {
+            "type": "number"
+          },
+          "p95": {
+            "type": "number"
+          },
+          "pmax": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false,
+        "required": ["service", "metric", "p50", "p90", "p95", "pmax"]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["from_date", "to_date", "interval", "items"]
+}

@@ -1,0 +1,6 @@
+{
+  "items": [
+    { "service": "aws.ec2", "metric": "instance_hours", "threshold": 12.5 },
+    { "service": "aws.s3", "metric": "storage_gb", "threshold": 1500 }
+  ]
+}

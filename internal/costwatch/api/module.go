@@ -58,7 +58,7 @@ func (a *API) SetupRoutes(api *mason.API) {
 
 	grp.Register(mason.HandlePut(a.UpdateAlertRule).
 		Path("/alert-rules").
-		WithOpID("update_alert_threshold"))
+		WithOpID("update_alert_rule"))
 
 	grp.Register(mason.HandleGet(a.AlertWindows).
 		Path("/alert-windows").

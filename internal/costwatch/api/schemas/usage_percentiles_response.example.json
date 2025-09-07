@@ -1,0 +1,23 @@
+{
+  "from_date": "2025-09-01T00:00:00Z",
+  "to_date": "2025-09-08T00:00:00Z",
+  "interval": 3600,
+  "items": [
+    {
+      "service": "aws.ec2",
+      "metric": "instance_hours",
+      "p50": 10.5,
+      "p90": 15.2,
+      "p95": 16.8,
+      "pmax": 20.1
+    },
+    {
+      "service": "aws.s3",
+      "metric": "storage_gb",
+      "p50": 1000.0,
+      "p90": 1200.0,
+      "p95": 1300.0,
+      "pmax": 1500.0
+    }
+  ]
+}

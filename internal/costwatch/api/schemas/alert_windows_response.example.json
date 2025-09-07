@@ -1,0 +1,23 @@
+{
+  "from_date": "2025-08-10T00:00:00Z",
+  "to_date": "2025-09-07T00:00:00Z",
+  "interval": 3600,
+  "items": [
+    {
+      "service": "aws.ec2",
+      "metric": "instance_hours",
+      "start": "2025-09-06T12:00:00Z",
+      "end": null,
+      "expected_cost": 24.0,
+      "real_cost": 36.5
+    },
+    {
+      "service": "aws.s3",
+      "metric": "storage_gb",
+      "start": "2025-08-20T00:00:00Z",
+      "end": "2025-08-20T04:00:00Z",
+      "expected_cost": 400.0,
+      "real_cost": 560.0
+    }
+  ]
+}

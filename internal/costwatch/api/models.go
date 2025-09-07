@@ -1,6 +1,7 @@
 package api
 
 import (
+	_ "embed"
 	"encoding/json"
 	"time"
 )
@@ -56,30 +57,18 @@ func (u *AlertRule) Name() string {
 	return "AlertRule"
 }
 
+//go:embed schemas/update_alert_rule_payload.schema.json
+var updateAlertRulePayloadSchema []byte
+
+//go:embed schemas/update_alert_rule_payload.example.json
+var updateAlertRulePayloadExample []byte
+
 func (u *AlertRule) Example() []byte {
-	return []byte(`{
-		"service": "aws.CloudWatch",
-		"metric": "IncomingBytes",
-		"threshold": 5.25
-	}`)
+	return updateAlertRulePayloadExample
 }
 
 func (u *AlertRule) Schema() []byte {
-	return []byte(`{
-      "type": "object",
-      "properties": {
-        "service": {
-          "type": "string"
-        },
-        "metric": {
-          "type": "string"
-        },
-		"threshold": {
-          "type": "number"
-        }
-      },
-      "required": ["service", "metric", "threshold"]
-    }`)
+	return updateAlertRulePayloadSchema
 }
 
 func (u *AlertRule) Unmarshal(data json.RawMessage) error {

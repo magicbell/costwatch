@@ -15,21 +15,30 @@ import (
 // SetupRoutes registers the GET /openapi.json endpoint on the provided mason API.
 func SetupRoutes(api *mason.API) {
 	api.Handle(http.MethodGet, "/openapi.json", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		sg, err := openapi.NewGenerator(api)
+		sch, err := Generate(api)
 		if err != nil {
-			return fmt.Errorf("openapi.NewGenerator: %w", err)
-		}
-		addSpecInfo(sg)
-
-		sch, err := sg.Schema()
-		if err != nil {
-			return fmt.Errorf("sg.Schema: %w", err)
+			return err
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		web.FileResponse(ctx, w, sch, http.StatusOK)
 		return nil
 	})
+}
+
+// Generate builds the OpenAPI JSON document for the provided Mason API.
+func Generate(api *mason.API) ([]byte, error) {
+	sg, err := openapi.NewGenerator(api)
+	if err != nil {
+		return nil, fmt.Errorf("openapi.NewGenerator: %w", err)
+	}
+	addSpecInfo(sg)
+
+	sch, err := sg.Schema()
+	if err != nil {
+		return nil, fmt.Errorf("sg.Schema: %w", err)
+	}
+	return sch, nil
 }
 
 func addSpecInfo(gen *openapi.Generator) {

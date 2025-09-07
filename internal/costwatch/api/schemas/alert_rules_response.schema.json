@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service": { "type": "string" },
+          "metric": { "type": "string" },
+          "threshold": { "type": "number" }
+        }
+      }
+    }
+  }
+}

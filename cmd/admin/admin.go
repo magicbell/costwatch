@@ -7,6 +7,9 @@ import (
 	"os"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
+	cwapi "github.com/costwatchai/costwatch/internal/costwatch/api"
+	"github.com/costwatchai/costwatch/internal/monolith"
+	"github.com/costwatchai/costwatch/internal/spec"
 )
 
 func main() {
@@ -27,6 +30,11 @@ func main() {
 			os.Exit(1)
 		}
 		log.Info("ClickHouse schema setup complete")
+	case "openapi":
+		if err := printOpenAPISpec(context.Background(), log); err != nil {
+			log.Error("Failed to generate OpenAPI spec", "error", err.Error())
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(2)
@@ -38,6 +46,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "Available commands:")
 	fmt.Fprintln(os.Stderr, "  seed-clickhouse\tInitialize ClickHouse schema")
+	fmt.Fprintln(os.Stderr, "  openapi\t\tPrint OpenAPI 3.1 spec to stdout")
 	fmt.Fprintln(os.Stderr, "")
 }
 
@@ -63,5 +72,31 @@ func seedClickhouse(ctx context.Context, log *slog.Logger) error {
 		return fmt.Errorf("clickstore.Setup: %w", err)
 	}
 
+	return nil
+}
+
+func printOpenAPISpec(ctx context.Context, log *slog.Logger) error {
+	// Build a Mason API using a lightweight server (no HTTP listener needed)
+	srv := monolith.NewServer(log, monolith.ServerOptions{})
+
+	// Register CostWatch API routes using a non-connecting test store
+	test := clickstore.NewTestStore(log)
+	client := &clickstore.Client{Conn: test}
+	cw, err := cwapi.New(ctx, log, client)
+	if err != nil {
+		return fmt.Errorf("api.New: %w", err)
+	}
+	cw.SetupRoutes(srv.API)
+
+	// Optionally, we could register health and spec routes, but the generator
+	// works solely from the registered API operations.
+
+	// Generate and print the OpenAPI document
+	data, err := spec.Generate(srv.API)
+	if err != nil {
+		return fmt.Errorf("spec.Generate: %w", err)
+	}
+	os.Stdout.Write(data)
+	os.Stdout.Write([]byte("\n"))
 	return nil
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,18 +12,21 @@ import (
 	"github.com/magicbell/mason/model"
 )
 
-var _ model.Entity = (*ListResult[AlertRule])(nil)
+type AlertRuleListResponse ListResult[AlertRule]
 
-func (r *ListResult[AlertRule]) Example() []byte {
-	return []byte(`{}`)
-}
+var _ model.Entity = (*AlertRuleListResponse)(nil)
 
-func (r *ListResult[AlertRule]) Marshal() (json.RawMessage, error) { return json.Marshal(r) }
-func (r *ListResult[AlertRule]) Name() string                      { return "UsageResponse" }
-func (r *ListResult[AlertRule]) Schema() []byte {
-	return []byte(`{}`)
-}
-func (r *ListResult[AlertRule]) Unmarshal(data json.RawMessage) error {
+//go:embed schemas/alert_rules_response.schema.json
+var alertRulesResponseSchema []byte
+
+//go:embed schemas/alert_rules_response.example.json
+var alertRulesResponseExample []byte
+
+func (r *AlertRuleListResponse) Example() []byte                   { return alertRulesResponseExample }
+func (r *AlertRuleListResponse) Marshal() (json.RawMessage, error) { return json.Marshal(r) }
+func (r *AlertRuleListResponse) Name() string                      { return "AlertRuleListResponse" }
+func (r *AlertRuleListResponse) Schema() []byte                    { return alertRulesResponseSchema }
+func (r *AlertRuleListResponse) Unmarshal(data json.RawMessage) error {
 	return json.Unmarshal(data, r)
 }
 
@@ -41,7 +45,7 @@ func (a *API) UpdateAlertRule(ctx context.Context, _ *http.Request, ent *AlertRu
 	return ent, nil
 }
 
-func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res *ListResult[AlertRule], err error) {
+func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res *AlertRuleListResponse, err error) {
 	recs, err := a.alerts.Alerts.ListRules(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("rules.List: %w", err)
@@ -50,7 +54,7 @@ func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res
 	for _, rec := range recs {
 		items = append(items, AlertRule{Service: rec.Service, Metric: rec.Metric, Threshold: rec.Threshold})
 	}
-	res = &ListResult[AlertRule]{Items: items}
+	res = &AlertRuleListResponse{Items: items}
 	return res, nil
 }
 
@@ -84,8 +88,32 @@ func (a *API) computeAlertWindows(ctx context.Context, start, end time.Time, int
 	return res, nil
 }
 
+type AlertWindowsQueryResponse QueryResult[AlertWindow]
+
+var _ model.Entity = (*AlertWindowsQueryResponse)(nil)
+
+//go:embed schemas/alert_windows_response.schema.json
+var alertWindowsResponseSchema []byte
+
+//go:embed schemas/alert_windows_response.example.json
+var alertWindowsResponseExample []byte
+
+func (r *AlertWindowsQueryResponse) Example() []byte { return alertWindowsResponseExample }
+func (r *AlertWindowsQueryResponse) Marshal() (json.RawMessage, error) {
+	return json.Marshal(r)
+}
+func (r *AlertWindowsQueryResponse) Name() string {
+	return "AlertWindowsQueryResponse"
+}
+func (r *AlertWindowsQueryResponse) Schema() []byte {
+	return alertWindowsResponseSchema
+}
+func (r *AlertWindowsQueryResponse) Unmarshal(data json.RawMessage) error {
+	return json.Unmarshal(data, r)
+}
+
 // AlertWindows returns contiguous windows where hourly cost exceeded thresholds.
-func (a *API) AlertWindows(ctx context.Context, _ *http.Request, _ model.Nil) (res *QueryResult[AlertWindow], err error) {
+func (a *API) AlertWindows(ctx context.Context, _ *http.Request, _ model.Nil) (res *AlertWindowsQueryResponse, err error) {
 	end := time.Now().UTC()
 	start := end.Add(-28 * 24 * time.Hour)
 	interval := 3600
@@ -95,7 +123,7 @@ func (a *API) AlertWindows(ctx context.Context, _ *http.Request, _ model.Nil) (r
 		return nil, err
 	}
 
-	res = &QueryResult[AlertWindow]{
+	res = &AlertWindowsQueryResponse{
 		Items:    windows,
 		FromDate: start,
 		ToDate:   end,

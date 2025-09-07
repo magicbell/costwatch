@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "from_date": {
+      "type": "string"
+    },
+    "to_date": {
+      "type": "string"
+    },
+    "interval": {
+      "type": "number"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "metric": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "required": ["service", "metric", "cost", "timestamp"]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["from_date", "to_date", "interval", "items"]
+}
