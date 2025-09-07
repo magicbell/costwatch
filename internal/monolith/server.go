@@ -9,7 +9,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	lambdarouter "github.com/code-inbox/mason-go/lambda"
-	"github.com/magicbell/magicbell/src/gofoundation/web"
+	"github.com/costwatchai/costwatch/internal/web"
 	"github.com/magicbell/mason"
 )
 

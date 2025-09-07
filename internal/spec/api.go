@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/aws/smithy-go/ptr"
-	"github.com/magicbell/magicbell/src/gofoundation/web"
+	"github.com/costwatchai/costwatch/internal/web"
 	"github.com/magicbell/mason"
 	"github.com/magicbell/mason/openapi"
 	"github.com/swaggest/openapi-go/openapi31"
