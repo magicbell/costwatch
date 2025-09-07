@@ -25,14 +25,6 @@ docker compose up
 
 Press Ctrl+C to stop. To run in the background: `docker compose up -d` and stop with `docker compose down`.
 
-## Configuration
-
-Most users can run with the defaults. If needed, copy example.env to .env and adjust values:
-
-```
-cp example.env .env
-```
-
 ## Receiving alerts
 
 Alerts are optional and can be posted to a Slack‑compatible incoming webhook.
