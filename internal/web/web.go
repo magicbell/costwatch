@@ -2,6 +2,8 @@
 package web
 
 import (
+	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -84,6 +86,16 @@ func (a *Server) NewRoute(method string, group string, path string, handler maso
 		ctx := webctx.SetValues(r.Context(), &v)
 
 		if err := handler(ctx, w, r); err != nil {
+			// Format validation Error
+			var fe model.ValidationError
+			if errors.As(err, &fe) {
+				// Return well-formatted validation errors
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnprocessableEntity)
+				json.NewEncoder(w).Encode(fe)
+				return
+			}
+
 			a.log.Error("handler error", "error", err)
 			// You might want to handle the error here, e.g., write an error response
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
