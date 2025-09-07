@@ -1,34 +1,42 @@
-import { TanstackDevtools } from '@tanstack/react-devtools';
+import * as React from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 
 import { Layout } from '@/components/layout';
 
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
+const DevTools = React.lazy(() =>
+  import('../integrations/tanstack-query/devtools').then(d => ({
+    default: d.DevTools,
+  }))
+)
 
 interface MyRouterContext {
   queryClient: QueryClient;
 }
 
-export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: () => (
+function Root() {
+  const [showDevtools, setShowDevtools] = React.useState(false)
+
+  React.useEffect(() => {
+    // @ts-ignore
+    window.toggleDevtools = () => setShowDevtools(old => !old)
+  }, [])
+
+  return (
     <>
       <Layout>
         <Outlet />
       </Layout>
-      <TanstackDevtools
-        config={{
-          position: 'bottom-left',
-        }}
-        plugins={[
-          {
-            name: 'Tanstack Router',
-            render: <TanStackRouterDevtoolsPanel />,
-          },
-          TanStackQueryDevtools,
-        ]}
-      />
+
+      {showDevtools ? (
+        <React.Suspense fallback={null}>
+          <DevTools />
+        </React.Suspense>
+      ) : null}
     </>
-  ),
+  )
+}
+
+export const Route = createRootRouteWithContext<MyRouterContext>()({
+  component: Root,
 });
