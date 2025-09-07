@@ -31,15 +31,32 @@ Most users can run with the defaults. If needed, copy example.env to .env and ad
 cp example.env .env
 ```
 
+## Receiving alerts
+
+Alerts are optional and can be posted to a Slack‑compatible incoming webhook.
+
+- Set `WEBHOOK_URL` in your `.env` to your webhook URL (for example, a Slack Incoming Webhook). The notifier posts a simple JSON payload like `{ "text": "..." }`, which is also compatible with many Slack‑compatible systems (e.g., Mattermost, Rocket.Chat).
+- Bring the stack up with `docker compose up` (compose loads `.env` for the api/worker).
+- Configure alert rules in the dashboard (Hourly costs card, Alert threshold
+column). When thresholds are exceeded, the worker will send notifications to WEBHOOK_URL.
+- For ongoing incidents, alerts will be sent at most once an hour.
+
+Tip: you can copy the provided example and then edit it:
+
+```shell
+cp example.env .env
+# open .env and set WEBHOOK_URL=https://hooks.slack.com/services/...
+```
+
 ## Contributing / local development
 
-See CONTRIBUTING.md for a workflow that runs services locally (without Docker) and provides convenient tasks for development.
+See [CONTRIBUTING.md](/CONTRIBUTING.md) for a workflow that runs services locally (without Docker) and provides convenient tasks for development.
 
 ## Troubleshooting
 
 - Ports 3000, 3010, 3020, 9000, or 8123 already in use:
   - Stop other processes using these ports or change the mappings in docker-compose.yml
-- First run takes a while:
-  - Docker may need to pull base images; subsequent runs will be faster
+- The first run takes a while:
+  - Docker may need to pull base images; later runs will be faster
 - Dashboard can't reach API from Docker:
   - The dashboard container generates its client pointing to http://localhost:3010/v1 and should just work via compose networking; ensure the API is up and healthy
