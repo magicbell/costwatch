@@ -9,7 +9,81 @@ services:
     environment:
       - CLICKHOUSE_PASSWORD=password
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://clickhouse:8123/ping || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8123/ping >/dev/null 2>&1 || exit 1']
       interval: 30s
+      start_interval: 5s
+      start_period: 30s
       timeout: 5s
       retries: 3
+
+  seed:
+    image: golang:1.24
+    working_dir: /app
+    command: sh -c "go run ./cmd/admin/admin.go seed-clickhouse"
+    environment:
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PASSWORD=password
+    volumes:
+      - ./:/app:delegated
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  api:
+    image: golang:1.24
+    working_dir: /app
+    command: sh -c "go run ./apps/api/cmd/main.go"
+    environment:
+      - APP_ENV=development
+      - PORT=3010
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PASSWORD=password
+    env_file:
+      - .env
+    volumes:
+      - ./:/app:delegated
+    ports:
+      - '3010:3010'
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+
+  worker:
+    image: golang:1.24
+    working_dir: /app
+    command: sh -c "go run ./apps/worker/cmd/main.go"
+    environment:
+      - APP_ENV=development
+      - PORT=3020
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PASSWORD=password
+    env_file:
+      - .env
+    volumes:
+      - ./:/app:delegated
+    ports:
+      - '3020:3020'
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+
+  dashboard:
+    image: node:22
+    working_dir: /app/apps/dashboard
+    command: sh -c "corepack enable && yarn install --prefer-offline --no-progress --non-interactive --silent && yarn vite"
+    volumes:
+      - ./:/app:delegated
+      - dashboard_node_modules:/app/apps/dashboard/node_modules
+    ports:
+      - '3000:3000'
+      - '24678:24678'
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  dashboard_node_modules:

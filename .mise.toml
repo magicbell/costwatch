@@ -1,0 +1,68 @@
+[env]
+NODE_OPTIONS = "--no-warnings"
+APP_ENV = "development"
+
+[tools]
+node = "22"
+go = "1.24.6"
+process-compose = "latest"
+
+[tasks.install]
+description = "Install dashboard dependencies"
+dir = "apps/dashboard"
+run = [
+    "yarn install --prefer-offline --no-progress --non-interactive --silent",
+]
+
+[tasks.gen-api-client]
+description = "Generate API client for the dashboard"
+depends = ["install"]
+env = { API_URL = "http://localhost:3010/v1" }
+run = [
+  "go run cmd/admin/admin.go openapi > openapi.json",
+  "cd apps/dashboard && npx -y orval",
+  "cd apps/dashboard && npx -y biome check --unsafe --write src/lib/api/client.ts",
+]
+
+[tasks.run-api]
+description = "Run the Go API"
+env = { PORT = "3010" }
+run = [
+  "go tool gow run ./apps/api/cmd/main.go",
+]
+
+[tasks.run-worker]
+description = "Run the worker"
+env = { PORT = "3020" }
+run = [
+  "go tool gow run ./apps/worker/cmd/main.go",
+]
+
+[tasks.run-dashboard]
+description = "Run the dashboard"
+depends = ["install", "gen-api-client"]
+dir = "apps/dashboard"
+env = { PORT = "3000" }
+run = [
+  "npx vite",
+]
+
+[tasks.seed-clickhouse]
+description = "Seed ClickHouse schema"
+run = [
+  "go run ./cmd/admin/admin.go seed-clickhouse",
+]
+
+[tasks.lint]
+description = "Run linter"
+run = [
+  "go fmt ./...",
+  "golangci-lint run ./...",
+  "cd apps/dashboard && npx biome check ."
+]
+
+[tasks.dev]
+description = "Run the full app stack via Process-Compose"
+run = [
+  "process-compose up",
+]

@@ -5,7 +5,7 @@ processes:
   seed:
     namespace: toolbox
     working_dir: .
-    command: go tool task seed-clickhouse
+    command: mise seed-clickhouse
     depends_on:
       clickhouse:
         condition: process_log_ready
@@ -26,7 +26,7 @@ processes:
   worker:
     namespace: apps
     working_dir: .
-    command: go tool task run-worker
+    command: mise run-worker
     ready_log_line: 'listening on'
     is_tty: true
     availability:
@@ -47,7 +47,7 @@ processes:
   api:
     namespace: apps
     working_dir: .
-    command: go tool task run-api
+    command: mise run-api
     ready_log_line: 'listening on'
     is_dotenv_disabled: true
     is_tty: true
@@ -69,7 +69,7 @@ processes:
   dashboard:
     namespace: apps
     working_dir: .
-    command: go tool task run-dashboard
+    command: mise run-dashboard
     ready_log_line: 'ready in'
     availability:
       restart: always
