@@ -11,7 +11,7 @@ Prerequisite: Docker Desktop (or Docker Engine) installed and running.
 1) Clone the repo and change into the project folder:
 
 ```shell
-git clone https://github.com/costwatchai/costwatch
+git clone https://github.com/magicbell/costwatch
 cd costwatch
 ```
 
