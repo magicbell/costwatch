@@ -38,10 +38,13 @@ services:
       - PORT=3010
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_PASSWORD=password
+      - AWS_PROFILE=${AWS_PROFILE}
+      - AWS_REGION=${AWS_REGION}
     env_file:
       - .env
     volumes:
       - ./:/app:delegated
+      - ${HOME}/.aws:/root/.aws:ro
     ports:
       - '3010:3010'
     depends_on:
@@ -59,10 +62,13 @@ services:
       - PORT=3020
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_PASSWORD=password
+      - AWS_PROFILE=${AWS_PROFILE}
+      - AWS_REGION=${AWS_REGION}
     env_file:
       - .env
     volumes:
       - ./:/app:delegated
+      - ${HOME}/.aws:/root/.aws:ro
     ports:
       - '3020:3020'
     depends_on:
