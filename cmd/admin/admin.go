@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
 	cwapi "github.com/costwatchai/costwatch/internal/costwatch/api"
@@ -50,14 +51,41 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "")
 }
 
+// getenv returns the value of the environment variable key or def if not set.
+func getenv(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+// getenvInt returns the integer value of the environment variable key or def if not set/invalid.
+func getenvInt(key string, def int) int {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			return n
+		}
+	}
+	return def
+}
+
 func seedClickhouse(ctx context.Context, log *slog.Logger) error {
-	// Connect to an existing database for setup
+	// Read ClickHouse connection details from environment with sensible defaults.
+	// This allows docker-compose to pass CLICKHOUSE_HOST=clickhouse so we don't
+	// accidentally connect to localhost/::1 inside the container.
+	host := getenv("CLICKHOUSE_HOST", "localhost")
+	port := getenvInt("CLICKHOUSE_PORT", 9000)
+	user := getenv("CLICKHOUSE_USERNAME", "default")
+	pass := getenv("CLICKHOUSE_PASSWORD", "password")
+	// Use the built-in "default" DB for seeding so we can create the target DB if missing.
+	db := getenv("CLICKHOUSE_DATABASE", "default")
+
 	cfg := clickstore.Config{
-		Host:     "localhost",
-		Port:     9000,
-		Username: "default",
-		Password: "password",
-		Database: "default",
+		Host:     host,
+		Port:     port,
+		Username: user,
+		Password: pass,
+		Database: db,
 	}
 
 	c, err := clickstore.NewClient(ctx, log, cfg)
@@ -67,7 +95,7 @@ func seedClickhouse(ctx context.Context, log *slog.Logger) error {
 	defer c.Close()
 
 	// Create target database and tables
-	targetDB := "costwatch"
+	targetDB := getenv("CLICKHOUSE_TARGET_DATABASE", "costwatch")
 	if err := c.Setup(ctx, targetDB); err != nil {
 		return fmt.Errorf("clickstore.Setup: %w", err)
 	}
