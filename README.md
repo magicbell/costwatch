@@ -25,6 +25,23 @@ docker compose up
 
 Press Ctrl+C to stop. To run in the background: `docker compose up -d` and stop with `docker compose down`.
 
+## AWS authentication
+
+CostWatch talks to AWS (e.g., CloudWatch) through the standard AWS SDK credential chain. Ensure your AWS credentials are available in the environment where the API/worker run.
+
+Common ways this works:
+- AWS SSO: log in with `aws sso login` for your profile; the SDK will pick up your session from your AWS config/credentials files.
+- Shared credentials/config files: `~/.aws/credentials` and `~/.aws/config`.
+- Environment variables: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and, when applicable, `AWS_SESSION_TOKEN`.
+
+Verify your identity with the AWS CLI:
+
+```bash
+aws sts get-caller-identity
+```
+
+If you are running via Docker, make sure the containers can access your credentials (for example, by exporting the env vars before `docker compose up`, or by mounting your `~/.aws` directory if that matches your workflow).
+
 ## Receiving alerts
 
 Alerts are optional and can be posted to a Slack‑compatible incoming webhook.
