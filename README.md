@@ -66,6 +66,10 @@ cp example.env .env
 # open .env and set WEBHOOK_URL=https://hooks.slack.com/services/...
 ```
 
+## Running on Lambda
+
+The API & Dashboard server support Lambda Function URL invocation signature. It is automatically enabled in the Lambda runtime where the environment variable `AWS_LAMBDA_FUNCTION_NAME` is set.
+
 ## Contributing / local development
 
 See [CONTRIBUTING.md](/CONTRIBUTING.md) for a workflow that runs services locally (without Docker) and provides convenient tasks for development.
@@ -78,3 +82,7 @@ See [CONTRIBUTING.md](/CONTRIBUTING.md) for a workflow that runs services locall
   - Docker may need to pull base images; later runs will be faster
 - Dashboard can't reach API from Docker:
   - The dashboard container generates its client pointing to http://localhost:3010/v1 and should just work via compose networking; ensure the API is up and healthy
+
+```
+
+```
