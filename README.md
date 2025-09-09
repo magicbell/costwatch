@@ -15,7 +15,7 @@ git clone https://github.com/magicbell/costwatch
 cd costwatch
 ```
 
-Copy the [example.env](/example.env) file to `.env
+Copy the `example.env` file to `.env`
 
 ```shell
 cp example.env .env
