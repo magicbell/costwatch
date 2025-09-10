@@ -81,7 +81,7 @@ export type alertRulesResponse = alertRulesResponseComposite & {
 };
 
 export const getAlertRulesUrl = () => {
-	return "http://localhost:3010/v1/alert-rules";
+	return "__API_URL__/alert-rules";
 };
 
 export const alertRules = async (
@@ -114,7 +114,7 @@ export type updateAlertRuleResponse = updateAlertRuleResponseComposite & {
 };
 
 export const getUpdateAlertRuleUrl = () => {
-	return "http://localhost:3010/v1/alert-rules";
+	return "__API_URL__/alert-rules";
 };
 
 export const updateAlertRule = async (
@@ -150,7 +150,7 @@ export type alertWindowsResponse = alertWindowsResponseComposite & {
 };
 
 export const getAlertWindowsUrl = () => {
-	return "http://localhost:3010/v1/alert-windows";
+	return "__API_URL__/alert-windows";
 };
 
 export const alertWindows = async (
@@ -183,7 +183,7 @@ export type usageResponse = usageResponseComposite & {
 };
 
 export const getUsageUrl = () => {
-	return "http://localhost:3010/v1/usage";
+	return "__API_URL__/usage";
 };
 
 export const usage = async (options?: RequestInit): Promise<usageResponse> => {
@@ -210,7 +210,7 @@ export type usagePercentilesResponse = usagePercentilesResponseComposite & {
 };
 
 export const getUsagePercentilesUrl = () => {
-	return "http://localhost:3010/v1/usage-percentiles";
+	return "__API_URL__/usage-percentiles";
 };
 
 export const usagePercentiles = async (

@@ -7,8 +7,11 @@ export default defineConfig({
       target: './src/lib/api/client.ts',
       client: 'fetch',
       mode: 'single',
-      baseUrl: process.env.API_URL,
+      baseUrl: '__API_URL__',
       namingConvention: 'kebab-case',
     },
+    hooks: {
+      afterAllFilesWrite: 'npx -y biome check --unsafe --write src/lib/api/client.ts',
+    }
   },
 });

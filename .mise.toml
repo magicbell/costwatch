@@ -21,7 +21,6 @@ env = { API_URL = "http://localhost:3010/v1" }
 run = [
   "go run cmd/admin/admin.go openapi > openapi.json",
   "cd apps/dashboard && npx -y orval",
-  "cd apps/dashboard && npx -y biome check --unsafe --write src/lib/api/client.ts",
 ]
 
 [tasks.run-api]
@@ -42,7 +41,7 @@ run = [
 description = "Run the dashboard"
 depends = ["install", "gen-api-client"]
 dir = "apps/dashboard"
-env = { PORT = "3000" }
+env = { PORT = "3000", API_URL = "http://localhost:3010/v1" }
 run = [
   "npx vite",
 ]
