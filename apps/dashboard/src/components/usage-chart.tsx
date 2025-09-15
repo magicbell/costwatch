@@ -59,29 +59,52 @@ export type UsageChartProps = {
 	hoveredAlertWindow?: { start: number; end: number } | null;
 };
 
+const colors = [
+   "purple",
+   "teal",
+   "orange",
+   "cyan",
+   "pink",
+   "yellow",
+   "blue",
+   "green",
+   "red",
+];
+
 function UsageChartComponent({
 	data,
 	alertWindows,
 	hoveredAlertWindow,
 }: UsageChartProps) {
 	const chartData = React.useMemo(
-		() =>
-			(data.items || []).map((x) => {
-				return {
-					[`${x.service} / ${x.metric}`]: x.cost,
-					ts: new Date(x.timestamp).getTime(),
-				};
-			}),
+		() => {
+      const map = new Map<number, Record<string, number>>;
+
+      for (const rec of data.items) {
+        const ts = new Date(rec.timestamp).getTime();
+        if (!map.has(ts)) {
+          map.set(ts, { ts });
+        }
+
+        const doc = map.get(ts)!;
+        const key = `${rec.service} / ${rec.metric}`;
+        doc[key] = rec.cost;
+      }
+
+			return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
+    },
 		[data.items],
 	);
+
 
 	const series = React.useMemo(
 		() =>
 			Array.from(
 				new Set((data.items || []).map((x) => `${x.service} / ${x.metric}`)),
-			).map((x) => ({
+			).map((x, idx) => ({
 				name: x,
-				color: "purple.solid",
+        color: colors[idx % colors.length],
+        stackId: 'a',
 			})),
 		[data.items],
 	);
@@ -132,7 +155,7 @@ function UsageChartComponent({
 		return [min, max] as [number, number];
 	}, [chart.data]);
 
-	if (!data.items || data.items.length === 0) {
+	if (series.length === 0) {
 		return (
 			<VStack align="center" justify="center" minH={300} color="fg.muted">
 				<Text>No usage data available for the selected period.</Text>
@@ -143,7 +166,7 @@ function UsageChartComponent({
 	return (
 		<ResponsiveContainer width="100%" height={300}>
 			<Chart.Root maxH="sm" chart={chart}>
-				<BarChart data={chart.data} barCategoryGap={1}>
+				<BarChart data={chart.data} barCategoryGap={.1}>
 					<CartesianGrid
 						stroke={chart.color("border.muted")}
 						vertical={false}
