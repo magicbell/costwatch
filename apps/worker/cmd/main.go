@@ -18,6 +18,8 @@ import (
 	"github.com/costwatchai/costwatch/internal/monolith"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch/metric"
+	cg "github.com/costwatchai/costwatch/internal/provider/coingecko"
+	cgm "github.com/costwatchai/costwatch/internal/provider/coingecko/metric"
 	"github.com/costwatchai/costwatch/internal/scheduler"
 )
 
@@ -94,6 +96,12 @@ func run(log *slog.Logger, env string) error {
 
 	ib := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), awscloudwatch.NewFromConfig(awsCfg))
 	svc.NewMetric(ib)
+
+	// CoinGecko provider with BTC/USD metrics
+	cgSvc := cg.NewService()
+	btc := cgm.NewPriceMetric(log.WithGroup("btc_usd"), nil)
+	cgSvc.NewMetric(btc)
+	costwatch.RegisterService(cgSvc)
 
 	// Leading sync at startup
 	if err := cw.Sync(ctx); err != nil {
