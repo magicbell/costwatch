@@ -115,7 +115,7 @@ func (r *AlertWindowsQueryResponse) Unmarshal(data json.RawMessage) error {
 // AlertWindows returns contiguous windows where hourly cost exceeded thresholds.
 func (a *API) AlertWindows(ctx context.Context, _ *http.Request, _ model.Nil) (res *AlertWindowsQueryResponse, err error) {
 	end := time.Now().UTC()
-	start := end.Add(-28 * 24 * time.Hour)
+	start := end.Add(-7 * 24 * time.Hour)
 	interval := 3600
 
 	windows, err := a.computeAlertWindows(ctx, start, end, interval)

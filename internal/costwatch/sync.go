@@ -10,7 +10,7 @@ import (
 // Rules:
 // - End is always "now" (UTC).
 // - Start is the oldest (earliest) of [last-synced, now-15m] to ensure we fetch at least 15 minutes.
-// - If no last-synced exists, default to a first-time lookback (currently 48 hours) to backfill history.
+// - If no last-synced exists, default to a first-time lookback (currently 7 days) to backfill history.
 func (cw *CostWatch) Sync(ctx context.Context) error {
 	st, err := cw.getSyncStore()
 	if err != nil {
@@ -27,7 +27,7 @@ func (cw *CostWatch) Sync(ctx context.Context) error {
 			}
 			start := last
 			if !ok || last.IsZero() {
-				start = now.Add(-48 * time.Hour)
+				start = now.Add(-(7 * 24) * time.Hour)
 			} else if last.After(fifteenAgo) {
 				start = fifteenAgo
 			}

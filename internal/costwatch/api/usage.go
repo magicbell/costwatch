@@ -29,10 +29,10 @@ func (r *UsageResponse) Unmarshal(data json.RawMessage) error {
 	return json.Unmarshal(data, r)
 }
 
-// Usage returns service usage + cost per interval for the past 28 days.
+// Usage returns service usage + cost per interval for the past 7 days.
 func (a *API) Usage(ctx context.Context, _ *http.Request, _ model.Nil) (res *UsageResponse, err error) {
 	end := time.Now().UTC()
-	start := end.Add(-28 * 24 * time.Hour)
+	start := end.Add(-7 * 24 * time.Hour)
 	interval := 3600
 
 	itemsRaw, err := a.usage.Usage(ctx, start, end, time.Duration(interval)*time.Second)

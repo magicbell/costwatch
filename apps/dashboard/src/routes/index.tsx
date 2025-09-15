@@ -84,7 +84,7 @@ function App() {
 					)}
 					<Card.Body gap={2}>
 						<Card.Title>Usage</Card.Title>
-						<Card.Description>Usage during the last 28 days</Card.Description>
+						<Card.Description>Usage during the last 7 days</Card.Description>
 
 						<UsageChart
 							data={usage}
