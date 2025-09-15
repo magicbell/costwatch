@@ -1,5 +1,34 @@
+# General
 .git
-**/.DS_Store
+.gitignore
+.DS_Store
+.junie/
 
-# ignore all node_modules
-**/node_modules
+# Env and local config
+.env
+.env.*
+
+# Databases and local data
+.db/
+_.db/
+*.sqlite
+*.db
+
+# Node
+node_modules/
+apps/**/node_modules/
+dist/
+build/
+.cache/
+.vite/
+
+# Go build/test caches (never needed in image context)
+**/.testcache/
+**/coverage/
+
+# Docker / compose artifacts
+docker-compose.override.yml
+
+# Misc editor/IDE
+.vscode/
+.idea/

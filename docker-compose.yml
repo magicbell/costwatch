@@ -17,20 +17,22 @@ services:
       retries: 3
 
   seed:
-    image: golang:1.24
+    build:
+      context: .
+      dockerfile: docker/go.Dockerfile
     working_dir: /app
     command: sh -c "go run ./cmd/admin/admin.go seed-clickhouse"
     environment:
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_PASSWORD=password
-    volumes:
-      - ./:/app:delegated
     depends_on:
       clickhouse:
         condition: service_healthy
 
   api:
-    image: golang:1.24
+    build:
+      context: .
+      dockerfile: docker/go.Dockerfile
     working_dir: /app
     command: sh -c "go run ./apps/api/cmd/main.go"
     environment:
@@ -43,10 +45,16 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/app:delegated
       - ${HOME}/.aws:/root/.aws:ro
     ports:
       - '3010:3010'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3010/v1/healthcheck >/dev/null 2>&1 || exit 1']
+      interval: 10s
+      start_interval: 2s
+      start_period: 30s
+      timeout: 3s
+      retries: 5
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -54,7 +62,9 @@ services:
         condition: service_completed_successfully
 
   worker:
-    image: golang:1.24
+    build:
+      context: .
+      dockerfile: docker/go.Dockerfile
     working_dir: /app
     command: sh -c "go run ./apps/worker/cmd/main.go"
     environment:
@@ -67,8 +77,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/app:delegated
-      - ${HOME}/.aws:/root/.aws:ro
+      - ${HOME}/.aws:/root/.aws
     ports:
       - '3020:3020'
     depends_on:
@@ -78,18 +87,22 @@ services:
         condition: service_completed_successfully
 
   dashboard:
-    image: node:22
+    build:
+      context: .
+      dockerfile: docker/node.Dockerfile
     working_dir: /app/apps/dashboard
-    command: sh -c "corepack enable && yarn install --prefer-offline --no-progress --non-interactive --silent && yarn vite"
-    volumes:
-      - ./:/app:delegated
-      - dashboard_node_modules:/app/apps/dashboard/node_modules
+    command: sh -c "yarn vite"
     ports:
       - '3000:3000'
       - '24678:24678'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1 || exit 1']
+      interval: 10s
+      start_interval: 2s
+      start_period: 60s
+      timeout: 3s
+      retries: 5
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
 
-volumes:
-  dashboard_node_modules:
