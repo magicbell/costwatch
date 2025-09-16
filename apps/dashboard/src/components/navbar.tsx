@@ -1,6 +1,28 @@
-import { Flex, HStack, Image, Spacer } from "@chakra-ui/react";
+import { Flex, HStack, IconButton, Image, Link, Spacer } from '@chakra-ui/react';
 
-import { ColorModeButton } from "@/components/ui/color-mode";
+import { VscGithubInverted } from 'react-icons/vsc';
+import { ColorModeButton } from '@/components/ui/color-mode.tsx';
+
+function GithubButton() {
+  return (
+    <IconButton
+      variant="ghost"
+      aria-label="Toggle color mode"
+      size="sm"
+      css={{
+        _icon: {
+          width: "5",
+          height: "5",
+        },
+      }}
+      asChild
+    >
+      <Link href="https://github.com/magicbell/costwatch" target="_blank">
+        <VscGithubInverted />
+      </Link>
+    </IconButton>
+  )
+}
 
 export function Navbar() {
 	return (
@@ -18,6 +40,7 @@ export function Navbar() {
 			</HStack>
 			<Spacer />
 			<HStack gap={2} align="center">
+        <GithubButton />
 				<ColorModeButton />
 			</HStack>
 		</Flex>
