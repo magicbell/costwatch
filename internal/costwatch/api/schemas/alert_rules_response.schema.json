@@ -11,6 +11,8 @@
           "threshold": { "type": "number" }
         }
       }
-    }
-  }
+    },
+    "readonly": { "type": "boolean" }
+  },
+  "required": ["items", "readonly"]
 }

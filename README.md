@@ -70,9 +70,16 @@ Alerts are optional and can be posted to a Slack‑compatible incoming webhook.
 
 - Set `WEBHOOK_URL` in your `.env` to your webhook URL (for example, a Slack Incoming Webhook). The notifier posts a simple JSON payload like `{ "text": "..." }`, which is also compatible with many Slack‑compatible systems (e.g., Mattermost, Rocket.Chat).
 - Bring the stack up with `docker compose up` (compose loads `.env` for the api/worker).
-- Configure alert rules in the dashboard (Hourly costs card, Alert threshold
-  column). When thresholds are exceeded, the worker will send notifications to WEBHOOK_URL.
+- Configure alert rules either:
+  - In the dashboard (Hourly costs card, Alert threshold column) when using SQLite; or
+  - Via environment variable `ALERT_RULES` for read‑only environments. Example:
+    `ALERT_RULES='[{"service":"aws.CloudWatch","metric":"IncomingBytes","threshold":0.47}]'`
+- When thresholds are exceeded, the worker will send notifications to WEBHOOK_URL.
 - For ongoing incidents, alerts will be sent at most once an hour.
+
+Notes:
+- When `ALERT_RULES` is set, alert rules are read‑only and persisted changes via the API are disabled.
+- In env mode, last notification timestamps are not recorded; the system behaves as if never notified before.
 
 Tip: you can copy the provided example and then edit it:
 

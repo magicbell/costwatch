@@ -22,6 +22,7 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
 	const client = useQueryClient();
 	const query = useQuery(alertRulesQueryOptions);
 	const mutation = useMutation(alertRuleMutationOptions(client));
+	const isReadOnly = query.data?.readonly === true;
 
 	if (rows.length === 0) return null;
 
@@ -67,29 +68,31 @@ function AveragesTableComponent({ data }: AveragesTableProps) {
 								{formatCurrency(r.pmax)}
 							</Table.Cell>
 							<Table.Cell textAlign="end" py={0} w={32}>
-								<Input
-									size="sm"
-									variant="flushed"
-									border={0}
-									type="number"
-									step="0.01"
-									textAlign="end"
-									placeholder={formatNumber(r.p95, {
-										minimumFractionDigits: 2,
-										maximumFractionDigits: 2,
-									})}
-									defaultValue={defaultValue}
-									onBlur={(e) => {
-										const value = Number(
-											e.currentTarget.value.replaceAll(",", "."),
-										);
-										mutation.mutate({
-											service: r.service,
-											metric: r.metric,
-											threshold: value,
-										});
-									}}
-								/>
+                <Input
+                  size="sm"
+                  variant="flushed"
+                  border={0}
+                  type="number"
+                  step="0.01"
+                  textAlign="end"
+                  readOnly={isReadOnly}
+                  placeholder={formatNumber(r.p95, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                  defaultValue={defaultValue}
+                  onBlur={(e) => {
+                    if (isReadOnly) return;
+                    const value = Number(
+                      e.currentTarget.value.replaceAll(",", "."),
+                    );
+                    mutation.mutate({
+                      service: r.service,
+                      metric: r.metric,
+                      threshold: value,
+                    });
+                  }}
+                />
 							</Table.Cell>
 						</Table.Row>
 					);

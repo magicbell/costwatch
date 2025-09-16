@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
 	appsvc "github.com/costwatchai/costwatch/internal/costwatch/app"
 	chinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/clickhouse"
+	envinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/env"
 	notinfr "github.com/costwatchai/costwatch/internal/costwatch/infra/notifier"
 	sqlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/sqlite"
+	"github.com/costwatchai/costwatch/internal/costwatch/port"
 	"github.com/costwatchai/costwatch/internal/sqlstore"
 )
 
@@ -242,7 +245,12 @@ func (cw *CostWatch) sendAlerts(ctx context.Context) error {
 
 	// Wire ports
 	m := chinfra.NewMetricsRepo(cw.cs)
-	a := sqlinfra.NewAlertsRepos(st)
+	var a port.AlertsRepo
+	if os.Getenv("ALERT_RULES") != "" {
+		a = envinfra.NewAlertsRepos()
+	} else {
+		a = sqlinfra.NewAlertsRepos(st)
+	}
 	n := notinfr.NewWebhookNotifierFromEnv()
 	c := registryCatalog{}
 	alerts := appsvc.NewAlertService(m, a, n, c)

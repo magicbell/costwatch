@@ -18,7 +18,8 @@ export type AlertRuleListResponseItemsItem = {
 };
 
 export interface AlertRuleListResponse {
-	items?: AlertRuleListResponseItemsItem[];
+	items: AlertRuleListResponseItemsItem[];
+	readonly: boolean;
 }
 
 export type AlertWindowsQueryResponseItemsItemEnd = string | null;

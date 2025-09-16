@@ -6,13 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/costwatch/port"
 	"github.com/magicbell/mason/model"
 )
 
-type AlertRuleListResponse ListResult[AlertRule]
+type AlertRuleListResponse struct {
+	Items    []AlertRule `json:"items"`
+	Readonly bool        `json:"readonly"`
+}
 
 var _ model.Entity = (*AlertRuleListResponse)(nil)
 
@@ -54,7 +58,9 @@ func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res
 	for _, rec := range recs {
 		items = append(items, AlertRule{Service: rec.Service, Metric: rec.Metric, Threshold: rec.Threshold})
 	}
-	res = &AlertRuleListResponse{Items: items}
+
+	_, readonly := os.LookupEnv("ALERT_RULES")
+	res = &AlertRuleListResponse{Items: items, Readonly: readonly}
 	return res, nil
 }
 
