@@ -97,11 +97,13 @@ func run(log *slog.Logger, env string) error {
 	ib := metric.NewIncomingBytes(log.WithGroup("incoming_bytes"), awscloudwatch.NewFromConfig(awsCfg))
 	svc.NewMetric(ib)
 
-	// CoinGecko provider with BTC/USD metrics
-	cgSvc := cg.NewService()
-	btc := cgm.NewPriceMetric(log.WithGroup("btc_usd"), nil)
-	cgSvc.NewMetric(btc)
-	costwatch.RegisterService(cgSvc)
+	// CoinGecko provider with BTC/USD metrics (disabled when DEMO=false)
+	if cg.Enabled() {
+		cgSvc := cg.NewService()
+		btc := cgm.NewPriceMetric(log.WithGroup("btc_usd"), nil)
+		cgSvc.NewMetric(btc)
+		costwatch.RegisterService(cgSvc)
+	}
 
 	// Leading sync at startup
 	if err := cw.Sync(ctx); err != nil {

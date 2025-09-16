@@ -53,10 +53,12 @@ func run(log *slog.Logger, env string) error {
 	costwatch.RegisterService(svc)
 
 	// CoinGecko provider with BTC/USD metrics (disabled when DEMO=false)
-	cgSvc := cg.NewService()
-	btc := cgm.NewPriceMetric(log.WithGroup("btc_usd"), nil)
-	cgSvc.NewMetric(btc)
-	costwatch.RegisterService(cgSvc)
+	if cg.Enabled() {
+		cgSvc := cg.NewService()
+		btcEUR := cgm.NewPriceMetric(log.WithGroup("btc_eur"), nil)
+		cgSvc.NewMetric(btcEUR)
+		costwatch.RegisterService(cgSvc)
+	}
 
 	cs, err := clickstore.NewClient(ctx, log, cfg.Clickhouse)
 	if err != nil {

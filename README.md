@@ -35,6 +35,17 @@ docker compose up
 
 Press Ctrl+C to stop. To run in the background: `docker compose up -d` and stop with `docker compose down`.
 
+### Demo data (CoinGecko)
+
+For demo purposes, CostWatch ships with a default provider that fetches BTC price metrics from CoinGecko. This helps populate charts immediately after startup.
+
+- Enabled by default when you follow the quick start.
+- You can disable this demo provider by setting the environment variable `DEMO` to `off` or `false`.
+
+```shell
+DEMO=off docker compose up
+```
+
 ## AWS authentication
 
 CostWatch talks to AWS (e.g., CloudWatch) through the standard AWS SDK credential chain. Ensure your AWS credentials are available in the environment where the API/worker run.
