@@ -29,8 +29,7 @@ type rule struct {
 
 var ErrReadOnly = errors.New("env alerts repo is read-only")
 
-func (r *AlertsRepos) ListRules(ctx context.Context) ([]port.AlertRule, error) { // ctx kept for interface compatibility
-	_ = ctx
+func (r *AlertsRepos) ListRules(_ context.Context) ([]port.AlertRule, error) {
 	val := os.Getenv("ALERT_RULES")
 	if val == "" {
 		return nil, nil
@@ -46,23 +45,14 @@ func (r *AlertsRepos) ListRules(ctx context.Context) ([]port.AlertRule, error) {
 	return out, nil
 }
 
-func (r *AlertsRepos) UpsertRule(ctx context.Context, ar port.AlertRule) error {
-	_ = ctx
-	_ = ar
+func (r *AlertsRepos) UpsertRule(_ context.Context, _ port.AlertRule) error {
 	return ErrReadOnly
 }
 
-func (r *AlertsRepos) GetLastNotified(ctx context.Context, service, metric string) (int64, bool, error) {
-	_ = ctx
-	_ = service
-	_ = metric
+func (r *AlertsRepos) GetLastNotified(_ context.Context, _, _ string) (int64, bool, error) {
 	return 0, false, nil
 }
 
-func (r *AlertsRepos) SetLastNotified(ctx context.Context, service, metric string, timeUnix int64) error {
-	_ = ctx
-	_ = service
-	_ = metric
-	_ = timeUnix
+func (r *AlertsRepos) SetLastNotified(_ context.Context, _, _ string, _ int64) error {
 	return nil
 }
