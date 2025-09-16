@@ -14,7 +14,7 @@ type WebhookNotifier struct {
 }
 
 func NewWebhookNotifierFromEnv() *WebhookNotifier {
-	return &WebhookNotifier{URL: os.Getenv("WEBHOOK_URL"), Client: &http.Client{}}
+	return &WebhookNotifier{URL: os.Getenv("ALERT_WEBHOOK_URL"), Client: &http.Client{}}
 }
 
 func (n *WebhookNotifier) Send(ctx context.Context, text string) error {
