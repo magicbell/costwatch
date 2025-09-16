@@ -91,7 +91,7 @@ function UsageChartComponent({
         doc[key] = rec.cost;
       }
 
-			return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
+			return Array.from(map.values()).sort((a, b) => (a.ts as number) - (b.ts as number));
     },
 		[data.items],
 	);
@@ -224,6 +224,7 @@ function UsageChartComponent({
 							dataKey={chart.key(item.name)}
 							fill={chart.color(item.color)}
 							stackId={item.stackId}
+              hide={!!chart.highlightedSeries && !chart.isHighlightedSeries(item.name)}
 						/>
 					))}
 				</BarChart>
