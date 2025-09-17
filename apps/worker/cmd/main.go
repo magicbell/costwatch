@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscloudwatch "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/costwatchai/costwatch/internal/appconfig"
@@ -105,6 +106,13 @@ func run(log *slog.Logger, env string) error {
 		costwatch.RegisterService(cgSvc)
 	}
 
+	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
+		lt := scheduler.NewLambdaTicker(cw.Sync)
+		lambda.Start(lt.EventBridgeHandler)
+	}
+
+	// ===========================================================================
+	// Running Locally
 	// Leading sync at startup
 	if err := cw.Sync(ctx); err != nil {
 		log.Error("leading sync failed", "error", err)
