@@ -14,7 +14,9 @@ type AlertsRepos struct {
 	st *sqlstore.Store
 }
 
-func NewAlertsRepos(st *sqlstore.Store) *AlertsRepos { return &AlertsRepos{st: st} }
+func NewAlertsRepos(st *sqlstore.Store) *AlertsRepos {
+	return &AlertsRepos{st: st}
+}
 
 //go:embed sql/list_alert_rules.sql
 var listAlertRulesSQL string

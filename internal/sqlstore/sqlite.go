@@ -17,7 +17,9 @@ type Store struct {
 }
 
 // DB returns the underlying sql.DB. Intended for infra adapters to run queries.
-func (s *Store) DB() *sql.DB { return s.db }
+func (s *Store) DB() *sql.DB {
+	return s.db
+}
 
 // Open opens (and creates if necessary) a SQLite database at the given path and ensures schema.
 func Open() (*Store, error) {
