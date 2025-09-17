@@ -10,7 +10,9 @@ import (
 	"github.com/costwatchai/costwatch/internal/sqlstore"
 )
 
-type AlertsRepos struct{ st *sqlstore.Store }
+type AlertsRepos struct {
+	st *sqlstore.Store
+}
 
 func NewAlertsRepos(st *sqlstore.Store) *AlertsRepos { return &AlertsRepos{st: st} }
 
