@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/costwatch/port"
@@ -31,21 +32,31 @@ type UsageService struct {
 }
 
 func NewUsageService(metrics port.MetricsRepo, catalog port.Catalog) *UsageService {
-	return &UsageService{Metrics: metrics, Catalog: catalog}
+	return &UsageService{
+		Metrics: metrics,
+		Catalog: catalog,
+	}
 }
 
 // Usage aggregates units per bucket and converts them to cost via the catalog.
 func (s *UsageService) Usage(ctx context.Context, start, end time.Time, bucket time.Duration) ([]UsageItem, error) {
 	recs, err := s.Metrics.Aggregate(ctx, start, end, bucket)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("metrics.Aggregate: %w", err)
 	}
-	out := make([]UsageItem, 0, len(recs))
+
+	rsp := make([]UsageItem, 0, len(recs))
 	for _, r := range recs {
 		cost, _ := s.Catalog.ComputeCost(r.Service, r.Metric, r.Units)
-		out = append(out, UsageItem{Service: r.Service, Metric: r.Metric, Timestamp: r.Timestamp, Cost: cost})
+		rsp = append(rsp, UsageItem{
+			Service:   r.Service,
+			Metric:    r.Metric,
+			Timestamp: r.Timestamp,
+			Cost:      cost,
+		})
 	}
-	return out, nil
+
+	return rsp, nil
 }
 
 // UsagePercentiles computes unit percentiles and converts them to cost via the catalog.
@@ -60,7 +71,16 @@ func (s *UsageService) UsagePercentiles(ctx context.Context, start, end time.Tim
 		c90, _ := s.Catalog.ComputeCost(r.Service, r.Metric, r.P90)
 		c95, _ := s.Catalog.ComputeCost(r.Service, r.Metric, r.P95)
 		cmax, _ := s.Catalog.ComputeCost(r.Service, r.Metric, r.PMax)
-		out = append(out, PercentileCost{Service: r.Service, Metric: r.Metric, P50: c50, P90: c90, P95: c95, PMax: cmax})
+
+		out = append(out, PercentileCost{
+			Service: r.Service,
+			Metric:  r.Metric,
+			P50:     c50,
+			P90:     c90,
+			P95:     c95,
+			PMax:    cmax,
+		})
 	}
+
 	return out, nil
 }

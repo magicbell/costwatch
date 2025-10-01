@@ -17,7 +17,7 @@ type ListResult[T any] struct {
 	Items []T `json:"items"`
 }
 
-type UsageRecord struct {
+type Record struct {
 	Service   string    `json:"service"`
 	Metric    string    `json:"metric"`
 	Cost      float64   `json:"cost"`
