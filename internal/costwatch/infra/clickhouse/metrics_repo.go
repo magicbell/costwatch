@@ -4,6 +4,8 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
@@ -31,7 +33,12 @@ func (q *MetricsRepo) Aggregate(ctx context.Context, start, end time.Time, bucke
 		Units     float64   `ch:"units"`
 	}
 
-	if err := q.db.Select(ctx, &rows, aggregateSQL, int(bucket.Seconds()), start, end); err != nil {
+	excludes := []string{}
+	if disableDemo() {
+		excludes = append(excludes, "coingecko")
+	}
+
+	if err := q.db.Select(ctx, &rows, aggregateSQL, int(bucket.Seconds()), start, end, excludes); err != nil {
 		return nil, fmt.Errorf("clickhouse.Select: %w", err)
 	}
 
@@ -60,14 +67,35 @@ func (q *MetricsRepo) Percentiles(ctx context.Context, start, end time.Time, buc
 		P95     float64 `ch:"p95"`
 		PMax    float64 `ch:"pmax"`
 	}
-	if err := q.db.Select(ctx, &rows, percentilesSQL, start, end, int(bucket.Seconds())); err != nil {
+
+	excludes := []string{}
+	if disableDemo() {
+		excludes = append(excludes, "coingecko")
+	}
+
+	if err := q.db.Select(ctx, &rows, percentilesSQL, start, end, int(bucket.Seconds()), excludes); err != nil {
 		return nil, fmt.Errorf("clickhouse.Select: %w", err)
 	}
 
 	out := make([]port.MetricPercentiles, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, port.MetricPercentiles{Service: r.Service, Metric: r.Metric, P50: r.P50, P90: r.P90, P95: r.P95, PMax: r.PMax})
+		out = append(out, port.MetricPercentiles{
+			Service: r.Service,
+			Metric:  r.Metric,
+			P50:     r.P50,
+			P90:     r.P90,
+			P95:     r.P95,
+			PMax:    r.PMax,
+		})
 	}
 
 	return out, nil
+}
+
+func disableDemo() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("DEMO")))
+	if v == "false" || v == "0" || v == "no" || v == "off" {
+		return false
+	}
+	return true
 }
