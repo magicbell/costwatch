@@ -1,12 +1,16 @@
 # Cost.watch
 
-Cost.watch pulls AWS usage metrics from Cloudwatch to project spend, delivering live dashboards and real-time alerts. Don't wait for the billing metrics to catch up and throw off your budgets.
+Cost.watch pulls AWS usage metrics from Cloudwatch to project spend, delivering live dashboards and real-time alerts. Don't wait for the billing metrics to catch up and throw off your budgets. It is developed at, and in use at [Tailbits](https://tailbits.com).
+
+Demo: [demo.cost.watch](https://demo.cost.watch)
+
+## Motivation
 
 AWS offers billing metrics and cost alerts, but this data is typically delayed by 6-24 hours. During this delay window, unexpected usage spikes can go unnoticed, potentially resulting in significant cost overruns that are only discovered after the fact.
 
 Costwatch solves this problem by leveraging near-real-time usage metrics (like CloudWatch metrics) and associating them with their corresponding costs. This enables immediate detection of cost anomalies and real-time alerting on spending spikes, allowing teams to respond to issues before they become expensive surprises.
 
-CostWatch pulls usage metrics (e.g., from AWS CloudWatch), stores them in ClickHouse, and exposes an API and dashboard for cost analysis, projections, and alerts. It is developed at, and in use at [Tailbits](https://tailbits.com).
+CostWatch pulls usage metrics (e.g., from AWS CloudWatch), stores them in ClickHouse, and exposes an API and dashboard for cost analysis, projections, and alerts.
 
 ![screenshot.png](docs/screenshot.png)
 
