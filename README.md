@@ -1,6 +1,6 @@
 # Cost.watch
 
-Cost.watch pulls AWS usage metrics from Cloudwatch to project spend, delivering live dashboards and real-time alerts. Don't wait for the billing metrics to catch up and throw off your budgets. It is developed at, and in use at [Tailbits](https://tailbits.com).
+[Cost.watch](https://cost.watch) pulls AWS usage metrics from Cloudwatch to project spend, delivering live dashboards and real-time alerts. Don't wait for the billing metrics to catch up and throw off your budgets. It is developed at, and in use at [Tailbits](https://tailbits.com).
 
 Demo: [demo.cost.watch](https://demo.cost.watch)
 
