@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"time"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
@@ -23,13 +24,21 @@ func (q *MetricsRepo) Aggregate(ctx context.Context, start, end time.Time, bucke
 		Timestamp time.Time `ch:"ts"`
 		Units     float64   `ch:"units"`
 	}
+
 	if err := q.db.Select(ctx, &rows, aggregateSQL, int(bucket.Seconds()), start, end); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("clickhouse.Select: %w", err)
 	}
+
 	out := make([]port.MetricBucket, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, port.MetricBucket{Service: r.Service, Metric: r.Metric, Timestamp: r.Timestamp, Units: r.Units})
+		out = append(out, port.MetricBucket{
+			Service:   r.Service,
+			Metric:    r.Metric,
+			Timestamp: r.Timestamp,
+			Units:     r.Units,
+		})
 	}
+
 	return out, nil
 }
 
@@ -46,11 +55,13 @@ func (q *MetricsRepo) Percentiles(ctx context.Context, start, end time.Time, buc
 		PMax    float64 `ch:"pmax"`
 	}
 	if err := q.db.Select(ctx, &rows, percentilesSQL, start, end, int(bucket.Seconds())); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("clickhouse.Select: %w", err)
 	}
+
 	out := make([]port.MetricPercentiles, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, port.MetricPercentiles{Service: r.Service, Metric: r.Metric, P50: r.P50, P90: r.P90, P95: r.P95, PMax: r.PMax})
 	}
+
 	return out, nil
 }
