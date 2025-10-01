@@ -10,34 +10,42 @@ type serviceRegistry struct {
 	data map[string]Service // key: service label
 }
 
-var globalSvcReg = &serviceRegistry{data: make(map[string]Service)}
+var registry = &serviceRegistry{
+	data: make(map[string]Service),
+}
 
 // RegisterService registers or replaces a service in the global registry.
 func RegisterService(svc Service) {
+	registry.mu.Lock()
+	defer registry.mu.Unlock()
+
 	if svc == nil {
 		return
 	}
-	globalSvcReg.mu.Lock()
-	defer globalSvcReg.mu.Unlock()
-	globalSvcReg.data[svc.Label()] = svc
+
+	registry.data[svc.Label()] = svc
 }
 
 // ListServices returns a snapshot of all registered services.
 func ListServices() []Service {
-	globalSvcReg.mu.RLock()
-	defer globalSvcReg.mu.RUnlock()
-	res := make([]Service, 0, len(globalSvcReg.data))
-	for _, s := range globalSvcReg.data {
+	registry.mu.RLock()
+	defer registry.mu.RUnlock()
+
+	res := make([]Service, 0, len(registry.data))
+	for _, s := range registry.data {
 		res = append(res, s)
 	}
+
 	return res
 }
 
 // FindService returns a registered service by name.
 func FindService(name string) (Service, bool) {
-	globalSvcReg.mu.RLock()
-	defer globalSvcReg.mu.RUnlock()
-	s, ok := globalSvcReg.data[name]
+	registry.mu.RLock()
+	defer registry.mu.RUnlock()
+
+	s, ok := registry.data[name]
+
 	return s, ok
 }
 
@@ -47,11 +55,13 @@ func FindMetric(serviceName, metricName string) (Metric, bool) {
 	if !ok {
 		return nil, false
 	}
+
 	for _, m := range s.Metrics() {
 		if m.Label() == metricName {
 			return m, true
 		}
 	}
+
 	return nil, false
 }
 
@@ -61,9 +71,13 @@ func ComputeCost(serviceName, metricName string, units float64) (float64, bool) 
 	if !ok {
 		return 0, false
 	}
+
 	upp := m.UnitsPerPrice()
 	if upp == 0 {
 		return 0, false
 	}
-	return math.Round((units/upp)*m.Price()) / 100, true
+
+	res := math.Round((units/upp)*m.Price()) / 100
+
+	return res, true
 }
