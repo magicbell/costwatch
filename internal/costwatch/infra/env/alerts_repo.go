@@ -40,7 +40,11 @@ func (r *AlertsRepos) ListRules(_ context.Context) ([]port.AlertRule, error) {
 	}
 	out := make([]port.AlertRule, 0, len(rs))
 	for _, it := range rs {
-		out = append(out, port.AlertRule{Service: it.Service, Metric: it.Metric, Threshold: it.Threshold})
+		out = append(out, port.AlertRule{
+			Service:   it.Service,
+			Metric:    it.Metric,
+			Threshold: it.Threshold,
+		})
 	}
 	return out, nil
 }
