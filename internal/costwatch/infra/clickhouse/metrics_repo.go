@@ -10,7 +10,9 @@ import (
 	"github.com/costwatchai/costwatch/internal/costwatch/port"
 )
 
-type MetricsRepo struct{ db *clickstore.Client }
+type MetricsRepo struct {
+	db *clickstore.Client
+}
 
 func NewMetricsRepo(db *clickstore.Client) *MetricsRepo {
 	return &MetricsRepo{
