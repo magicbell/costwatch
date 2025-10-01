@@ -66,8 +66,8 @@ func FindMetric(serviceName, metricName string) (Metric, bool) {
 }
 
 // ComputeCost computes cost via Metric interface defined pricing.
-func ComputeCost(serviceName, metricName string, units float64) (float64, bool) {
-	m, ok := FindMetric(serviceName, metricName)
+func ComputeCost(service, metric string, units float64) (float64, bool) {
+	m, ok := FindMetric(service, metric)
 	if !ok {
 		return 0, false
 	}

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/costwatchai/costwatch/internal/clickstore"
-	appsvc "github.com/costwatchai/costwatch/internal/costwatch/app"
+	"github.com/costwatchai/costwatch/internal/costwatch/app"
 	ctlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/catalog"
 	chinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/clickhouse"
 	envinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/env"
@@ -18,23 +18,24 @@ import (
 // API wires ClickHouse and CostWatch and exposes HTTP routes.
 type API struct {
 	log   *slog.Logger
-	alert *appsvc.AlertService
-	usage *appsvc.UsageService
+	alert *app.AlertService
+	usage *app.UsageService
 }
 
 // New constructs the API with a pre-initialized ClickHouse client.
 func New(_ context.Context, log *slog.Logger, store *clickstore.Client) (*API, error) {
 	repo := chinfra.NewMetricsRepo(store)
 	ctlg := ctlinfra.GlobalRegistryCatalog{}
-	var a appsvc.AlertService
+
+	var a app.AlertService
 	if os.Getenv("ALERT_RULES") != "" {
-		a = *appsvc.NewAlertService(repo, envinfra.NewAlertsRepos(), nilNotifier{}, ctlg)
+		a = *app.NewAlertService(repo, envinfra.NewAlertsRepos(), nilNotifier{}, ctlg)
 	} else {
 		alertsDB, _ := sqlstore.Open()
 		sqlRepo := sqlinfra.NewAlertsRepos(alertsDB)
-		a = *appsvc.NewAlertService(repo, sqlRepo, nilNotifier{}, ctlg)
+		a = *app.NewAlertService(repo, sqlRepo, nilNotifier{}, ctlg)
 	}
-	usage := appsvc.NewUsageService(repo, ctlg)
+	usage := app.NewUsageService(repo, ctlg)
 
 	return &API{
 		log:   log,

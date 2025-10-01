@@ -12,7 +12,11 @@ import (
 
 type MetricsRepo struct{ db *clickstore.Client }
 
-func NewMetricsRepo(db *clickstore.Client) *MetricsRepo { return &MetricsRepo{db: db} }
+func NewMetricsRepo(db *clickstore.Client) *MetricsRepo {
+	return &MetricsRepo{
+		db: db,
+	}
+}
 
 //go:embed sql/aggregate.sql
 var aggregateSQL string
