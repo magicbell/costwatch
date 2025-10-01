@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,17 +16,27 @@ type PercentilesResponse QueryResult[PercentileRecord]
 var _ model.Entity = (*PercentilesResponse)(nil)
 
 //go:embed schemas/usage_percentiles_response.schema.json
-var percentilesResponseSchema []byte
+var percentilesSchema []byte
 
 //go:embed schemas/usage_percentiles_response.example.json
-var percentilesResponseExample []byte
+var percentilesExample []byte
 
-func (r *PercentilesResponse) Name() string { return "UsagePercentilesResponse" }
-func (r *PercentilesResponse) Schema() []byte {
-	return percentilesResponseSchema
+func (r *PercentilesResponse) Name() string {
+	return "UsagePercentilesResponse"
 }
-func (r *PercentilesResponse) Example() []byte                   { return percentilesResponseExample }
-func (r *PercentilesResponse) Marshal() (json.RawMessage, error) { return json.Marshal(r) }
+
+func (r *PercentilesResponse) Schema() []byte {
+	return percentilesSchema
+}
+
+func (r *PercentilesResponse) Example() []byte {
+	return percentilesExample
+}
+
+func (r *PercentilesResponse) Marshal() (json.RawMessage, error) {
+	return json.Marshal(r)
+}
+
 func (r *PercentilesResponse) Unmarshal(data json.RawMessage) error {
 	return json.Unmarshal(data, r)
 }
