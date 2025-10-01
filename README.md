@@ -1,10 +1,12 @@
-# CostWatch
+# Cost.watch
 
-Cloud providers like AWS offer billing metrics and cost alerts, but this data is typically delayed by 6-24 hours. During this delay window, unexpected usage spikes can go unnoticed, potentially resulting in significant cost overruns that are only discovered after the fact.
+Cost.watch pulls AWS usage metrics from Cloudwatch to project spend, delivering live dashboards and real-time alerts. Don't wait for the billing metrics to catch up and throw off your budgets.
+
+AWS offers billing metrics and cost alerts, but this data is typically delayed by 6-24 hours. During this delay window, unexpected usage spikes can go unnoticed, potentially resulting in significant cost overruns that are only discovered after the fact.
 
 Costwatch solves this problem by leveraging near-real-time usage metrics (like CloudWatch metrics) and associating them with their corresponding costs. This enables immediate detection of cost anomalies and real-time alerting on spending spikes, allowing teams to respond to issues before they become expensive surprises.
 
-CostWatch pulls usage metrics (e.g., from AWS CloudWatch), stores them in ClickHouse, and exposes an API and dashboard for cost analysis, projections, and alerts. It is developed at, and in use at [MagicBell](https://www.magicbell.com). 
+CostWatch pulls usage metrics (e.g., from AWS CloudWatch), stores them in ClickHouse, and exposes an API and dashboard for cost analysis, projections, and alerts. It is developed at, and in use at [Tailbits](https://tailbits.com).
 
 ![screenshot.png](docs/screenshot.png)
 
@@ -46,6 +48,10 @@ For demo purposes, CostWatch ships with a default provider that fetches BTC pric
 DEMO=off docker compose up
 ```
 
+## Supported Services & Metrics
+
+At the moment, the only supported service is Cloudwatch and the only supported metric is [IncomingBytes](/internal/provider/aws/cloudwatch/metric/incoming_bytes.go), but it is easy to add a new service. If you'd like to see more services added, please create a PR, or request it in a new issue!
+
 ## AWS authentication
 
 CostWatch talks to AWS (e.g., CloudWatch) through the standard AWS SDK credential chain. Ensure your AWS credentials are available in the environment where the API/worker run.
@@ -78,6 +84,7 @@ Alerts are optional and can be posted to a Slack‑compatible incoming webhook.
 - For ongoing incidents, alerts will be sent at most once an hour.
 
 Notes:
+
 - When `ALERT_RULES` is set, alert rules are read‑only and persisted changes via the API are disabled.
 - In env mode, last notification timestamps are not recorded; the system behaves as if never notified before.
 
