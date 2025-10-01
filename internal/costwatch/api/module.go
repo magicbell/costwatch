@@ -24,17 +24,17 @@ type API struct {
 
 // New constructs the API with a pre-initialized ClickHouse client.
 func New(_ context.Context, log *slog.Logger, store *clickstore.Client) (*API, error) {
-	m := chinfra.NewMetricsRepo(store)
-	c := ctlinfra.GlobalRegistryCatalog{}
+	repo := chinfra.NewMetricsRepo(store)
+	ctlg := ctlinfra.GlobalRegistryCatalog{}
 	var a appsvc.AlertService
 	if os.Getenv("ALERT_RULES") != "" {
-		a = *appsvc.NewAlertService(m, envinfra.NewAlertsRepos(), nilNotifier{}, c)
+		a = *appsvc.NewAlertService(repo, envinfra.NewAlertsRepos(), nilNotifier{}, ctlg)
 	} else {
 		alertsDB, _ := sqlstore.Open()
 		sqlRepo := sqlinfra.NewAlertsRepos(alertsDB)
-		a = *appsvc.NewAlertService(m, sqlRepo, nilNotifier{}, c)
+		a = *appsvc.NewAlertService(repo, sqlRepo, nilNotifier{}, ctlg)
 	}
-	usage := appsvc.NewUsageService(m, c)
+	usage := appsvc.NewUsageService(repo, ctlg)
 
 	return &API{
 		log:   log,
