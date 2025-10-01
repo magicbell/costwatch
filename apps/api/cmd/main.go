@@ -10,7 +10,7 @@ import (
 	"github.com/costwatchai/costwatch/internal/appconfig"
 	"github.com/costwatchai/costwatch/internal/clickstore"
 	"github.com/costwatchai/costwatch/internal/costwatch"
-	costwatchapi "github.com/costwatchai/costwatch/internal/costwatch/api"
+	"github.com/costwatchai/costwatch/internal/costwatch/api"
 	"github.com/costwatchai/costwatch/internal/health"
 	"github.com/costwatchai/costwatch/internal/monolith"
 	"github.com/costwatchai/costwatch/internal/provider/aws/cloudwatch"
@@ -65,7 +65,7 @@ func run(log *slog.Logger, env string) error {
 		return fmt.Errorf("clickstore.NewClient: %w", err)
 	}
 
-	cw, err := costwatchapi.New(ctx, log, cs)
+	cw, err := api.New(ctx, log, cs)
 	if err != nil {
 		return fmt.Errorf("costwatch.New: %w", err)
 	}

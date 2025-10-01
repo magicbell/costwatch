@@ -17,9 +17,9 @@ import (
 
 // API wires ClickHouse and CostWatch and exposes HTTP routes.
 type API struct {
-	log    *slog.Logger
-	alerts *appsvc.AlertService
-	usage  *appsvc.UsageService
+	log   *slog.Logger
+	alert *appsvc.AlertService
+	usage *appsvc.UsageService
 }
 
 // New constructs the API with a pre-initialized ClickHouse client.
@@ -37,9 +37,9 @@ func New(_ context.Context, log *slog.Logger, store *clickstore.Client) (*API, e
 	usage := appsvc.NewUsageService(m, c)
 
 	return &API{
-		log:    log,
-		alerts: &a,
-		usage:  usage,
+		log:   log,
+		alert: &a,
+		usage: usage,
 	}, nil
 }
 

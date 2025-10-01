@@ -43,14 +43,14 @@ type UpdateAlertThresholdRequest struct {
 
 // UpdateAlertRule upserts a threshold keyed by service+metric.
 func (a *API) UpdateAlertRule(ctx context.Context, _ *http.Request, ent *AlertRule, _ model.Nil) (res *AlertRule, err error) {
-	if err := a.alerts.Alerts.UpsertRule(ctx, port.AlertRule{Service: ent.Service, Metric: ent.Metric, Threshold: ent.Threshold}); err != nil {
+	if err := a.alert.Alerts.UpsertRule(ctx, port.AlertRule{Service: ent.Service, Metric: ent.Metric, Threshold: ent.Threshold}); err != nil {
 		return nil, fmt.Errorf("rules.Upsert: %w", err)
 	}
 	return ent, nil
 }
 
 func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res *AlertRuleListResponse, err error) {
-	recs, err := a.alerts.Alerts.ListRules(ctx)
+	recs, err := a.alert.Alerts.ListRules(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("rules.List: %w", err)
 	}
@@ -65,7 +65,7 @@ func (a *API) AlertRules(ctx context.Context, _ *http.Request, _ model.Nil) (res
 }
 
 func (a *API) computeAlertWindows(ctx context.Context, start, end time.Time, interval int) ([]AlertWindow, error) {
-	wins, err := a.alerts.ComputeWindows(ctx, start, end, time.Duration(interval)*time.Second)
+	wins, err := a.alert.ComputeWindows(ctx, start, end, time.Duration(interval)*time.Second)
 	if err != nil {
 		return nil, err
 	}
