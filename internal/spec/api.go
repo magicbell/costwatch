@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/aws/smithy-go/ptr"
-	"github.com/costwatchai/costwatch/internal/web"
 	"github.com/magicbell/mason"
 	"github.com/magicbell/mason/openapi"
 	"github.com/swaggest/openapi-go/openapi31"
+	"github.com/tailbits/costwatch/internal/web"
 )
 
 // SetupRoutes registers the GET /openapi.json endpoint on the provided mason API.

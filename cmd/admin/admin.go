@@ -7,10 +7,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/costwatchai/costwatch/internal/clickstore"
-	cwapi "github.com/costwatchai/costwatch/internal/costwatch/api"
-	"github.com/costwatchai/costwatch/internal/monolith"
-	"github.com/costwatchai/costwatch/internal/spec"
+	"github.com/tailbits/costwatch/internal/clickstore"
+	cwapi "github.com/tailbits/costwatch/internal/costwatch/api"
+	"github.com/tailbits/costwatch/internal/monolith"
+	"github.com/tailbits/costwatch/internal/spec"
 )
 
 func main() {

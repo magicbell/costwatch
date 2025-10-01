@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/tailbits/costwatch/internal/costwatch"
 )
 
 //go:embed testdata/testmetric.json

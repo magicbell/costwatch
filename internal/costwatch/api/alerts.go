@@ -9,8 +9,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
 	"github.com/magicbell/mason/model"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
 )
 
 type AlertRuleListResponse struct {

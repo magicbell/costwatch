@@ -5,14 +5,14 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/costwatchai/costwatch/internal/clickstore"
-	"github.com/costwatchai/costwatch/internal/costwatch/app"
-	ctlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/catalog"
-	chinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/clickhouse"
-	envinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/env"
-	sqlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/sqlite"
-	"github.com/costwatchai/costwatch/internal/sqlstore"
 	"github.com/magicbell/mason"
+	"github.com/tailbits/costwatch/internal/clickstore"
+	"github.com/tailbits/costwatch/internal/costwatch/app"
+	ctlinfra "github.com/tailbits/costwatch/internal/costwatch/infra/catalog"
+	chinfra "github.com/tailbits/costwatch/internal/costwatch/infra/clickhouse"
+	envinfra "github.com/tailbits/costwatch/internal/costwatch/infra/env"
+	sqlinfra "github.com/tailbits/costwatch/internal/costwatch/infra/sqlite"
+	"github.com/tailbits/costwatch/internal/sqlstore"
 )
 
 // API wires ClickHouse and CostWatch and exposes HTTP routes.

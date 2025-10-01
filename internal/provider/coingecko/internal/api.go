@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/tailbits/costwatch/internal/costwatch"
 )
 
 // MarketChart represents the subset of CoinGecko market_chart response we care about.

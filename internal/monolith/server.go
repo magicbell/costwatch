@@ -9,8 +9,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	lambdarouter "github.com/code-inbox/mason-go/lambda"
-	"github.com/costwatchai/costwatch/internal/web"
 	"github.com/magicbell/mason"
+	"github.com/tailbits/costwatch/internal/web"
 )
 
 // ServerOptions configures the shared Server behavior.

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/costwatchai/costwatch/internal/clickstore"
+	"github.com/tailbits/costwatch/internal/clickstore"
 )
 
 type Config struct {

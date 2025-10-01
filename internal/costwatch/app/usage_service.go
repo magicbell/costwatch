@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
 )
 
 // UsageItem represents a costed metric bucket for API consumption.

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
 )
 
 // AlertsRepos implements port.AlertsRepo backed by environment variables.

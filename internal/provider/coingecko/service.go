@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/tailbits/costwatch/internal/costwatch"
 )
 
 // Ensure Service implements costwatch.Service

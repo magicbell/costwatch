@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
 )
 
 type AlertService struct {

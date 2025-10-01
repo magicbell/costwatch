@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/costwatchai/costwatch/internal/webctx"
+	"github.com/tailbits/costwatch/internal/webctx"
 )
 
 // Respond converts a Go value to JSON and sends it to the client.

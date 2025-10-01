@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch"
-	cgapi "github.com/costwatchai/costwatch/internal/provider/coingecko/internal"
+	"github.com/tailbits/costwatch/internal/costwatch"
+	cgapi "github.com/tailbits/costwatch/internal/provider/coingecko/internal"
 )
 
 const (

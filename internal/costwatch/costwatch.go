@@ -7,14 +7,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/clickstore"
-	appsvc "github.com/costwatchai/costwatch/internal/costwatch/app"
-	chinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/clickhouse"
-	envinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/env"
-	notinfr "github.com/costwatchai/costwatch/internal/costwatch/infra/notifier"
-	sqlinfra "github.com/costwatchai/costwatch/internal/costwatch/infra/sqlite"
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
-	"github.com/costwatchai/costwatch/internal/sqlstore"
+	"github.com/tailbits/costwatch/internal/clickstore"
+	appsvc "github.com/tailbits/costwatch/internal/costwatch/app"
+	chinfra "github.com/tailbits/costwatch/internal/costwatch/infra/clickhouse"
+	envinfra "github.com/tailbits/costwatch/internal/costwatch/infra/env"
+	notinfr "github.com/tailbits/costwatch/internal/costwatch/infra/notifier"
+	sqlinfra "github.com/tailbits/costwatch/internal/costwatch/infra/sqlite"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
+	"github.com/tailbits/costwatch/internal/sqlstore"
 )
 
 type Usage interface {

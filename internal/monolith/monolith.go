@@ -4,8 +4,8 @@ package monolith
 import (
 	"log/slog"
 
-	"github.com/costwatchai/costwatch/internal/appconfig"
 	"github.com/magicbell/mason"
+	"github.com/tailbits/costwatch/internal/appconfig"
 )
 
 type Monolith interface {

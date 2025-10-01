@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/clickstore"
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
+	"github.com/tailbits/costwatch/internal/clickstore"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
 )
 
 type MetricsRepo struct {

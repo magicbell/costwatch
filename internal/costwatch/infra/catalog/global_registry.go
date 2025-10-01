@@ -1,6 +1,6 @@
 package catalog
 
-import "github.com/costwatchai/costwatch/internal/costwatch"
+import "github.com/tailbits/costwatch/internal/costwatch"
 
 type GlobalRegistryCatalog struct{}
 

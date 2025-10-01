@@ -1,4 +1,4 @@
-module github.com/costwatchai/costwatch
+module github.com/tailbits/costwatch
 
 go 1.24.2
 
@@ -8,7 +8,6 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
 	github.com/ardanlabs/conf/v3 v3.8.0
 	github.com/aws/aws-lambda-go v1.49.0
-	github.com/aws/aws-sdk-go v1.55.8
 	github.com/aws/aws-sdk-go-v2 v1.38.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.6
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.49.2
@@ -18,7 +17,6 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/magicbell/mason v0.0.0-20250804124936-04a0b90f9eec
 	github.com/swaggest/openapi-go v0.2.59
-	gotest.tools/v3 v3.5.2
 	modernc.org/sqlite v1.38.2
 )
 
@@ -39,7 +37,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.6 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.6 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.17.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.30.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.29.1 // indirect
@@ -75,7 +73,6 @@ require (
 	github.com/go-task/task/v3 v3.44.1 // indirect
 	github.com/go-task/template v0.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
@@ -85,7 +82,7 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect

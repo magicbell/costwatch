@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
-	"github.com/costwatchai/costwatch/internal/costwatch"
+	"github.com/tailbits/costwatch/internal/costwatch"
 )
 
 const (

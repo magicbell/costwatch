@@ -6,8 +6,8 @@ import (
 	_ "embed"
 	"time"
 
-	"github.com/costwatchai/costwatch/internal/costwatch/port"
-	"github.com/costwatchai/costwatch/internal/sqlstore"
+	"github.com/tailbits/costwatch/internal/costwatch/port"
+	"github.com/tailbits/costwatch/internal/sqlstore"
 )
 
 type AlertsRepos struct {
